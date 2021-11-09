@@ -31,6 +31,7 @@ def loadin_data(path):
 def output_Q1(df):
     
     # Q1 a
+    # plot the prices series:
     fig, ax = plt.subplots(nrows = 1,ncols = 3, figsize = (15, 4))
     index = range(len(df))
     ax[0].plot(index, df['DJIA.Close'])
@@ -43,7 +44,10 @@ def output_Q1(df):
     plt.show()
     
     
+    
     # Q1 b
+    # perform dickey fuller tests on the price series:
+    
     
     
     
