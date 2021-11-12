@@ -38,7 +38,21 @@ def loadin_data(path):
     
     return df
 
+###############################################################################
+### output_Q1
 def output_Q1(df):
+    """
+    Function that produces all output associated with question one
+
+    Parameters
+    ----------
+    df : dataframe produced by function loadin_data(path)
+
+    Returns
+    -------
+    None.
+
+    """
     # for this question, we only use data until 2010
     # we dont have date indexing or whatever, so we dont know when to split the data
     # but we assume:
@@ -65,9 +79,24 @@ def output_Q1(df):
     
     # Q1 b
     # perform dickey fuller tests on the price series:
-    # maybe get first lag phi w/ OLS (slightly biased but we have plenty of data...)
-    # then check if phi == 1 significantly
-    
+    # employ DF stat from Tsay page 77
+    # then check crit values
+    for col in ['DJIA.Close', 'N225.Close', 'SSMI.Close']:
+        mx = np.ones((len(df[col][1:-1]),2))
+        mx[:,1] = df[col][1:-1]
+        y = df[col][2:]
+        phi_hat = np.linalg.inv(mx.T @ mx) @ mx.T @ y
+        e = y - mx@phi_hat
+        standard_errors = np.var(e) * np.linalg.inv(mx.T@mx)
+        
+        DF_stat = (phi_hat[1]-1) / np.sqrt(standard_errors[1,1])
+        print('dickey fuller test statistic for', col, ' = ', DF_stat)
+        if np.abs(DF_stat) > 2.86:
+            print('so the series is stationary')
+        else:
+            print('So the series is non-stationary')
+            
+        print('')
     
     
         
@@ -164,6 +193,10 @@ def output_Q1(df):
     
     return
     
+    
+###############################################################################
+### output_Q2
+def output_Q2(df):
     
 
 
