@@ -249,8 +249,9 @@ def output_Q4(df):
     
     # start with VAR(1) 
     def log_lik(y, params):
-        mu = params[0] 
-        phi = params[1]
+        mu = np.reshape(params[0:3], (3,1))
+        phi = np.reshape(params[3:], (3,3))
+        
         yt = y[:,1:]
         ylag1 = y[:,:-1]
         
@@ -264,14 +265,16 @@ def output_Q4(df):
         
         return LLs
     
-    mu = np.zeros((3,1))
-    phi = np.zeros((3,3))
-    y = np.array(df[rets][1:]).T
     
-    AvgNLL = lambda mu, phi : -np.mean(log_lik(y, mu, phi))
-    params = [mu, phi]
+    params =  np.zeros(12)    # define parameters
+    y = np.array(df[rets][1:]).T # define data used and put in right shape
     
-    res    = opt.minimize(AvgNLL, params, method='BFGS')
+    AvgNLL = lambda params : -np.mean(log_lik(y, params)) # define function to be optimized 
+    
+    res    = opt.minimize(AvgNLL, params, method='L-BFGS-B') # algos that work: Powell, 
+    print(res.message)
+    mu_hat = res.x[0:3]
+    phi_hat = np.reshape(res.x[3:], (3,3))
     
     
     
