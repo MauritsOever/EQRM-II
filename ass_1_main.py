@@ -13,7 +13,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as sc
+from scipy impo
 import statsmodels.tsa.stattools as st
+
 
 
 
@@ -196,9 +198,81 @@ def output_Q1(df):
     
 ###############################################################################
 ### output_Q2
-def output_Q2(df):
-    
+def output_Q4(df):
+    """
+    Function that produces all the output of Q4
 
+    Parameters
+    ----------
+    df : dataframe produced by function loadin_data(path)
+
+    Returns
+    -------
+    None.
+
+    """
+    rets = ['DJIA.Ret', 'N225.Ret', 'SSMI.Ret']
+    df = df[rets][1:] #reduce size of df for easier looping 
+    
+    # Q4 a
+    
+    # get cross covariances for each lag for each series...
+    cross_covs = np.ones((25,9))
+    column_count = 0
+    
+    for series1 in rets:
+        for series2 in rets:
+            for k in range(1,26):
+                ret1 = df[series1][k:]
+                ret2 = df[series2][:-k]
+                #cross_covs[k-1, column_count] = np.sum((ret1-np.mean(ret1))*(ret2-np.mean(ret2)))/(len(ret1)) # slightly different values
+                cross_covs[k-1, column_count] = np.cov(ret1,ret2)[0,1]
+                print(len(ret2))
+    
+            column_count += 1
+    
+    fig, ax = plt.subplots(3,3, figsize= (10,10))
+    column_count = 0
+    for i in range(0,3):
+        for j in range(0,3):
+            ax[i,j].plot(cross_covs[:,column_count])
+            ax[i,j].axhline()
+            ax[i,j].set_title(rets[i]+', '+rets[j])
+            column_count += 1
+    plt.tight_layout()
+    plt.show()
+    
+    
+    
+    # Q4 b
+    # estimating the VAR(1) and VAR(2) model by ML
+    
+    # start with VAR(1) 
+    def log_lik(y, phi, mu):
+        yt = y[:,1:]
+        ylag1 = y[:,:-1]
+        
+        eps = yt - phi@ylag1 - mu
+        
+        sigma = (eps@eps.T)/len(yt.T)
+        LLs = np.empty(len(yt.T))
+        
+        for t in range(len(LLs)):
+            LLs[t] = -(3*len(yt.T)/2)*np.log(2*np.pi) - 0.5*np.log(np.linalg.det(sigma)) -0.5*eps[:,t].T@np.linalg.inv(sigma)@eps[:,t]
+        
+        return LLs
+    
+    mu = np.zeros((3,1))
+    phi = np.zeros((3,3))
+    y = np.array(df[rets][1:]).T
+    
+    params = [mu, phi]
+    
+    sc 
+    
+    
+    
+    return
 
 ###########################################################
 ### main
