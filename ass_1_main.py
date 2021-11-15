@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as sc
-from scipy impo
+import scipy.optimize as opt
 import statsmodels.tsa.stattools as st
 
 
@@ -248,7 +248,9 @@ def output_Q4(df):
     # estimating the VAR(1) and VAR(2) model by ML
     
     # start with VAR(1) 
-    def log_lik(y, phi, mu):
+    def log_lik(y, params):
+        mu = params[0] 
+        phi = params[1]
         yt = y[:,1:]
         ylag1 = y[:,:-1]
         
@@ -266,9 +268,11 @@ def output_Q4(df):
     phi = np.zeros((3,3))
     y = np.array(df[rets][1:]).T
     
+    AvgNLL = lambda mu, phi : -np.mean(log_lik(y, mu, phi))
     params = [mu, phi]
     
-    sc 
+    res    = opt.minimize(AvgNLL, params, method='BFGS')
+    
     
     
     
