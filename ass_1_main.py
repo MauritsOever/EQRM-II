@@ -311,7 +311,7 @@ def output_Q4(df):
     print('Fitting VAR(1) model...')
     
     AvgNLL = lambda params : -np.mean(log_lik_var1(y, params)) # define function to be minimized 
-    res_var1    = opt.minimize(AvgNLL, params, method='Powell') # algos that work: Powell, 
+    res_var1    = opt.minimize(AvgNLL, params, method='SLSQP') # algos that work: Powell, 
     print(res_var1.message)
     mu_hat_var1 = np.reshape(res_var1.x[0:3], (3,1))
     phi_hat_var1 = np.reshape(res_var1.x[3:], (3,3))
@@ -377,7 +377,7 @@ def output_Q4(df):
     print('Fitting VAR(2)...')
     print('')
     AvgNLL = lambda params : -np.mean(log_lik_var2(y, params)) # define function to be minimized
-    res_var2 = opt.minimize(AvgNLL, params, method='Powell')
+    res_var2 = opt.minimize(AvgNLL, params, method='SLSQP')
     print(res_var2.message)
     mu = np.reshape(res_var2.x[0:3], (3,1))
     phi1 = np.reshape(res_var2.x[3:12], (3,3))
@@ -393,7 +393,7 @@ def output_Q4(df):
     eps_hat = y[:,2:] - phi1@y[:,1:-1] - phi2@y[:,:-2] - mu
     sigma_hat_var2 = (eps_hat@eps_hat.T)/len(y[:,2:].T)
     print('sigma hat = ', sigma_hat_var2)
-    
+    print('')
     m = 0.5*3*(3+1) + 3 + 2*3**2
     T = len(y[:,2:].T)
     
