@@ -406,6 +406,23 @@ def output_Q4(df):
     print('criterions of VAR(2) (AIC, AICc, BIC) are ', criterions_var2)
     print('')
     
+    #question 4 c
+    print('Question 4 c: ')
+    print('')
+    #initialize 0 matrix P
+    # python implementation of the Cholesky-Banachiewicz algorithm
+    P_hat = np.zeros((3,3))
+    for i in range(3):
+        for k in range(i+1):
+            tmp_sum = sum(P_hat[i][j] * P_hat[k][j] for j in range(k))
+            if (i == k): # Diagonal elements
+                P_hat[i][k] = np.sqrt(sigma_hat_var2[i][i] - tmp_sum)
+            else:
+                P_hat[i][k] = (1.0 / P_hat[k][k] * (sigma_hat_var2[i][k] - tmp_sum))
+
+    print('P_hat = ')
+    print(P_hat)
+    
     return
 
 ###########################################################
