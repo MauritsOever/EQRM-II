@@ -7,7 +7,7 @@ Created on Tue Nov  9 12:01:46 2021
 
 @author: Maurits van den Oever and Connor Stevens
 """
-
+#%%
 # load in packages
 import pandas as pd
 import numpy as np
@@ -233,11 +233,7 @@ def output_Q4(df):
 
     Returns
     -------
-    None.
-
-    To do:
-        - test linear version, see if similar
-        - subquestion c boiii
+    estimates   :   dictionary of estimated objects needed for Q5
 
     """
     rets = ['DJIA.Ret', 'N225.Ret', 'SSMI.Ret']
@@ -411,20 +407,134 @@ def output_Q4(df):
     print('')
     #initialize 0 matrix P
     # python implementation of the Cholesky-Banachiewicz algorithm
-    P_hat = np.zeros((3,3))
-    for i in range(3):
-        for k in range(i+1):
-            tmp_sum = sum(P_hat[i][j] * P_hat[k][j] for j in range(k))
-            if (i == k): # Diagonal elements
-                P_hat[i][k] = np.sqrt(sigma_hat_var2[i][i] - tmp_sum)
-            else:
-                P_hat[i][k] = (1.0 / P_hat[k][k] * (sigma_hat_var2[i][k] - tmp_sum))
+    def cholesky_decomp(matrix):
+        P_hat = np.zeros((3,3))
+        for i in range(3):
+            for k in range(i+1):
+                tmp_sum = sum(P_hat[i][j] * P_hat[k][j] for j in range(k))
+                if (i == k): # Diagonal elements
+                    P_hat[i][k] = np.sqrt(matrix[i][i] - tmp_sum)
+                else:
+                    P_hat[i][k] = (1.0 / P_hat[k][k] * (matrix[i][k] - tmp_sum))
+        return P_hat
 
-    print('P_hat = ')
-    print(P_hat)
+    P_hat_var1 = cholesky_decomp(sigma_hat_var1)
+    P_hat_var2 = cholesky_decomp(sigma_hat_var2)
+    
+    print('P_hat for VAR(1) = ')
+    print(P_hat_var1)
+    print('')
+    
+    print('P_hat for VAR(2) = ')
+    print(cholesky_decomp(sigma_hat_var2))
+    
+    Q5_ests = {'P_hat_var1':P_hat_var1, 'P_hat_var2':P_hat_var2, 'phi_hat_var1':phi_hat_var1,
+               'phi1': phi1, 'phi2':phi2}
+    
+    
+    return Q5_ests
+
+#%%
+###########################################################
+### output_Q5
+def output_Q5(estimates):
+    """
+    Function that produces all the output for Q5
+
+    Parameters
+    ----------
+    estimates : dictionary created by function output_Q4, including all parameter 
+                estimates for VAR(1 and 2) and corresponding sigmas...
+
+    Returns
+    -------
+    None.
+
+    """
+    IRFlen = 11
+    selection1 = np.reshape(np.array([1,0,0]), (3,1))
+    selection2 = np.reshape(np.array([0,1,0]), (3,1))
+    selection3 = np.reshape(np.array([0,0,1]), (3,1))
+    
+    store1 = np.empty((IRFlen,3))
+    store2 = np.empty((IRFlen,3))
+    store3 = np.empty((IRFlen,3))
+    
+    for i in range(1, IRFlen+1):
+        store1[i-1,:] = np.reshape(estimates['phi_hat_var1']**(i-1)@estimates['P_hat_var1']@selection1, (3,))
+        store2[i-1,:] = np.reshape(estimates['phi_hat_var1']**(i-1)@estimates['P_hat_var1']@selection2, (3,))
+        store3[i-1,:] = np.reshape(estimates['phi_hat_var1']**(i-1)@estimates['P_hat_var1']@selection3, (3,))
+        
+    fig, ax = plt.subplots(3,3, figsize= (10,10))
+    ax[0,0].plot(store1[:,0])
+    ax[0,0].set_title('Effect of DJIA shock on DJIA')
+    ax[0,1].plot(store1[:,1])
+    ax[0,1].set_title('Effect of N225 shock on DJIA')
+    ax[0,2].plot(store1[:,2])
+    ax[0,2].set_title('Effect of SSMI shock on DJIA')
+    ax[1,0].plot(store2[:,0])
+    ax[1,0].set_title('Effect of DJIA shock on N225')
+    ax[1,1].plot(store2[:,1])
+    ax[1,1].set_title('Effect of N225 shock on N225')
+    ax[1,2].plot(store2[:,2])
+    ax[1,2].set_title('Effect of SSMI shock on N225')
+    ax[2,0].plot(store3[:,0])
+    ax[2,0].set_title('Effect of DJIA shock on SSMI')
+    ax[2,1].plot(store3[:,1])
+    ax[2,1].set_title('Effect of N225 shock on SSMI')
+    ax[2,2].plot(store3[:,2])
+    ax[2,2].set_title('Effect of SSMI shock on SSMI')
+    plt.tight_layout()
+    plt.show()
+    
+    
+    ## okay now do IFRS for VAR(2)
+    store1 = np.empty((IRFlen,3))
+    store2 = np.empty((IRFlen,3))
+    store3 = np.empty((IRFlen,3))
+
+    for i in range(1, IRFlen+1):
+        if i == 1:
+            store1[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection1, (3,))
+            store2[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection2, (3,))
+            store3[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection3, (3,))
+        else:
+            store1[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection1 + estimates['phi2']**(i-1)@estimates['P_hat_var2']@selection1, (3,))
+            store2[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection2 + estimates['phi2']**(i-1)@estimates['P_hat_var2']@selection1, (3,))
+            store3[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection3 + estimates['phi2']**(i-1)@estimates['P_hat_var2']@selection1, (3,))
+
+
+    fig, ax = plt.subplots(3,3, figsize= (10,10))
+    ax[0,0].plot(store1[:,0])
+    ax[0,0].set_title('Effect of DJIA shock on DJIA')
+    ax[0,1].plot(store1[:,1])
+    ax[0,1].set_title('Effect of N225 shock on DJIA')
+    ax[0,2].plot(store1[:,2])
+    ax[0,2].set_title('Effect of SSMI shock on DJIA')
+    ax[1,0].plot(store2[:,0])
+    ax[1,0].set_title('Effect of DJIA shock on N225')
+    ax[1,1].plot(store2[:,1])
+    ax[1,1].set_title('Effect of N225 shock on N225')
+    ax[1,2].plot(store2[:,2])
+    ax[1,2].set_title('Effect of SSMI shock on N225')
+    ax[2,0].plot(store3[:,0])
+    ax[2,0].set_title('Effect of DJIA shock on SSMI')
+    ax[2,1].plot(store3[:,1])
+    ax[2,1].set_title('Effect of N225 shock on SSMI')
+    ax[2,2].plot(store3[:,2])
+    ax[2,2].set_title('Effect of SSMI shock on SSMI')
+    plt.tight_layout()
+    plt.show()
+
+    
     
     return
 
+#%%
+output_Q5(estimates)
+
+
+#%%
 ###########################################################
 ### main
 def main():
@@ -434,7 +544,8 @@ def main():
     
     # output_Q1(df)
     
-    output_Q4(df)
+    estimates = output_Q4(df)
+    output_Q5(estimates)
 
 ###########################################################
 ### start main
