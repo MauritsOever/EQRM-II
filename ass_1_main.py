@@ -562,7 +562,7 @@ def main():
     path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\triv_ts.txt"
     df = loadin_data(path)
     
-    #output_Q1(df)
+    output_Q1(df)
     
     estimates = output_Q4(df)
     output_Q5(estimates)
