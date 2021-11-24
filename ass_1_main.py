@@ -1041,6 +1041,219 @@ def output_Q5(estimates):
     plt.show()
 
     return
+
+###############################################################################
+### output_Q6
+def output_Q6(df):
+    """
+
+    Parameters
+    ----------
+    df : dataframe of returns and closing prices
+
+    Returns
+    -------
+    None.
+
+    """
+    print('Question 6a: ')
+    print('')
+    df = df.iloc[1:,:]
+    # define data:
+    y = np.array(df.iloc[:,1:4].T)
+    dy = np.array(df.iloc[:,4:].T)
+    
+    # okay start with VECM(1)
+    ylag1 = y[:,:-1]
+    dyt = dy[:,1:]
+    
+    # initialize parameters
+    params = np.zeros(12)
+    
+    
+    def log_lik_vecm1(dyt, ylag1, params):
+        mu = np.reshape(params[0:3], (3,1))
+        PI = np.reshape(params[3:12], (3,3))
+        
+        eps = dyt - PI@ylag1 - mu
+        sigma = (eps@eps.T)/len(dyt.T)
+
+        LLs = np.empty(len(dyt.T))
+        
+        for t in range(len(LLs)):
+            LLs[t] = -(3*len(dyt.T)/2)*np.log(2*np.pi) - 0.5*np.log(np.linalg.det(sigma)) -0.5*eps[:,t].T@np.linalg.inv(sigma)@eps[:,t]
+
+        return LLs
+    
+    print('Fitting a VECM(1): ')
+    print('')
+    AvgNLL = lambda params : -np.mean(log_lik_vecm1(dyt, ylag1, params)) # define function to be minimized 
+    res_vecm1   = opt.minimize(AvgNLL, params, method='Powell') # algos that work: Powell, SLSQP
+    print(res_vecm1.message)
+    mu_hat = np.reshape(res_vecm1.x[0:3], (3,1))
+    PI_hat1 = np.reshape(res_vecm1.x[3:12], (3,3))
+    eps = dyt - PI_hat1@ylag1 - mu_hat
+    sigma_hat = (eps@eps.T)/len(dyt.T)
+    
+    print('mu hat = ', mu_hat.round(decimals=4))
+    print('')
+    print('PI hat = ', PI_hat1.round(decimals=4))
+    print('')
+    print('sigma hat = ', sigma_hat.round(decimals=4))
+    print('')
+    
+    m = 18
+    T = len(dy[:,1:].T)
+    
+    AIC_vecm1 = np.log(np.linalg.det(sigma_hat)) + 2*m/T
+    AICc_vecm1 = np.log(np.linalg.det(sigma_hat)) + 2*m/T*((T+2*m)/(T-m-1)) 
+    BIC_vecm1 = np.log(np.linalg.det(sigma_hat)) + m*np.log(T)/T
+    
+    criterions_vecm1 = np.array([AIC_vecm1, AICc_vecm1, BIC_vecm1])
+    print('criterions of VECM(1) (AIC, AICc, BIC) are ', criterions_vecm1.round(decimals=4))
+    print('')
+
+    # okay now for VECM2
+    # define series used
+    dyt = dy[:,1:]
+    dylag1 = dy[:,:-1]
+    ylag1 = y[:,:-1]
+    params = np.zeros(21)
+
+    def log_lik_vecm2(dyt, dylag1, ylag1, params):
+        mu = np.reshape(params[0:3], (3,1))
+        PI = np.reshape(params[3:12], (3,3))
+        Gamma1 = np.reshape(params[12:], (3,3))
+        
+        eps = dyt - PI@ylag1 - Gamma1@dylag1 - mu
+        sigma = (eps@eps.T)/len(dyt.T)
+
+        LLs = np.empty(len(dyt.T))
+        
+        for t in range(len(LLs)):
+            LLs[t] = -(3*len(dyt.T)/2)*np.log(2*np.pi) - 0.5*np.log(np.linalg.det(sigma)) -0.5*eps[:,t].T@np.linalg.inv(sigma)@eps[:,t]
+            
+        return LLs
+    print('Fitting a VECM(2): ')
+    print('')
+    AvgNLL = lambda params : -np.mean(log_lik_vecm2(dyt, dylag1, ylag1, params))
+    res_vecm2 = opt.minimize(AvgNLL, params, method='Powell')
+    print(res_vecm2.message)
+    mu_hat = np.reshape(res_vecm2.x[0:3], (3,1))
+    PI_hat2 = np.reshape(res_vecm2.x[3:12], (3,3))
+    Gamma1_hat = np.reshape(res_vecm2.x[12:], (3,3))
+    
+    eps = dyt - PI_hat2@ylag1 - Gamma1_hat@dylag1 - mu_hat
+    sigma_hat = (eps@eps.T)/len(dyt.T)
+    print('mu hat = ', mu_hat.round(decimals=4))
+    print('')
+    print('PI hat = ', PI_hat2.round(decimals=4))
+    print('')
+    print('Gamma1 hat = ', Gamma1_hat.round(decimals=4))
+    print('')
+    print('sigma hat = ', sigma_hat.round(decimals=4))
+    print('')
+    
+    m = 27
+    T = len(dy[:,1:].T)
+    
+    AIC_vecm2 = np.log(np.linalg.det(sigma_hat)) + 2*m/T
+    AICc_vecm2 = np.log(np.linalg.det(sigma_hat)) + 2*m/T*((T+2*m)/(T-m-1)) 
+    BIC_vecm2 = np.log(np.linalg.det(sigma_hat)) + m*np.log(T)/T
+    
+    criterions_vecm2 = np.array([AIC_vecm2, AICc_vecm2, BIC_vecm2])
+    print('criterions of VECM(2) (AIC, AICc, BIC) are ', criterions_vecm2.round(decimals=4))
+    print('')
+    
+    
+    # okay now for VECM3
+    # define series used
+    dyt = dy[:,2:]
+    dylag1 = dy[:,1:-1]
+    dylag2 = dy[:,:-2]
+    ylag1 = y[:,1:-1]
+    
+    params = np.zeros(30)
+    
+    def log_lik_vecm3(dyt, dylag1, dylag2, ylag1, params):
+        mu = np.reshape(params[0:3], (3,1))
+        PI = np.reshape(params[3:12], (3,3))
+        Gamma1 = np.reshape(params[12:21], (3,3))
+        Gamma2 = np.reshape(params[21:], (3,3))
+        
+        eps = dyt - PI@ylag1 - Gamma1@dylag1 - Gamma2@dylag2 - mu
+        sigma = (eps@eps.T)/len(dyt.T)
+
+        LLs = np.empty(len(dyt.T))
+        
+        for t in range(len(LLs)):
+            LLs[t] = -(3*len(dyt.T)/2)*np.log(2*np.pi) - 0.5*np.log(np.linalg.det(sigma)) -0.5*eps[:,t].T@np.linalg.inv(sigma)@eps[:,t]
+            
+        return LLs
+    print('Fitting a VECM(3): ')
+    print('')
+    AvgNLL = lambda params : -np.mean(log_lik_vecm3(dyt, dylag1, dylag2, ylag1, params))
+    res_vecm3 = opt.minimize(AvgNLL, params, method='Powell')
+    print(res_vecm3.message)
+    mu_hat = np.reshape(res_vecm3.x[0:3], (3,1))
+    PI_hat3 = np.reshape(res_vecm3.x[3:12], (3,3))
+    Gamma1_hat = np.reshape(res_vecm3.x[12:21], (3,3))
+    Gamma2_hat = np.reshape(res_vecm3.x[21:], (3,3))
+    
+    eps = dyt - PI_hat3@ylag1 - Gamma1_hat@dylag1 - Gamma2_hat@dylag2 - mu_hat
+    sigma_hat = (eps@eps.T)/len(dyt.T)
+    print('mu hat = ', mu_hat.round(decimals=4))
+    print('')
+    print('PI hat = ', PI_hat3.round(decimals=4))
+    print('')
+    print('Gamma1 hat = ', Gamma1_hat.round(decimals=4))
+    print('')
+    print('Gamma2 hat = ', Gamma2_hat.round(decimals=4))
+    print('')
+    print('sigma hat = ', sigma_hat.round(decimals=4))
+    print('')
+    
+    m = 36
+    T = len(dy[:,1:].T)
+    
+    AIC_vecm3 = np.log(np.linalg.det(sigma_hat)) + 2*m/T
+    AICc_vecm3 = np.log(np.linalg.det(sigma_hat)) + 2*m/T*((T+2*m)/(T-m-1)) 
+    BIC_vecm3 = np.log(np.linalg.det(sigma_hat)) + m*np.log(T)/T
+    
+    criterions_vecm3 = np.array([AIC_vecm3, AICc_vecm3, BIC_vecm3])
+    print('criterions of VECM(2) (AIC, AICc, BIC) are ', criterions_vecm3.round(decimals=4))
+    print('')
+    
+    print('Done fitting all the models!')
+    print('')
+    
+    
+    
+    # question 4b
+    print('Question 6b: ')
+    # first get LR for all PI's...
+    eig1 = np.linalg.eig(PI_hat1)[0]
+    eig2 = np.linalg.eig(PI_hat2)[0]
+    eig3 = np.linalg.eig(PI_hat3)[0]
+    
+    LR = np.empty((3,3))
+    
+    for i in range(3):
+        sumk1 = np.sum(np.log(np.ones(3-i)-eig1[i:]))
+        LR1 = -(len(dy.T)-1)*sumk1
+        sumk2 = np.sum(np.log(np.ones(3-i)-eig2[i:]))
+        LR2 = -(len(dy.T)-2)*sumk2
+        sumk3 = np.sum(np.log(np.ones(3-i)-eig3[i:]))
+        LR3 = -(len(dy.T)-3)*sumk3   
+        
+        LR[:,i] = np.array([LR1, LR2, LR3])
+    
+    print('LR test statistics = ',LR)
+    
+    return
+
+
+
 #%%
 ###########################################################
 ### main
@@ -1051,10 +1264,9 @@ def main():
     
     output_Q1(df)
     Output_Q2(df)
-
-    
     estimates = output_Q4(df)
     output_Q5(estimates)
+    output_Q6(df)
 
 ###########################################################
 ### start main
