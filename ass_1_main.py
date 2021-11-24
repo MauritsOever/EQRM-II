@@ -749,8 +749,19 @@ def output_Q6(df):
     eig2 = np.linalg.eig(PI_hat2)[0]
     eig3 = np.linalg.eig(PI_hat3)[0]
     
+    LR = np.empty((3,3))
     
+    for i in range(3):
+        sumk1 = np.sum(np.log(np.ones(3-i)-eig1[i:]))
+        LR1 = -(len(dy.T)-1)*sumk1
+        sumk2 = np.sum(np.log(np.ones(3-i)-eig2[i:]))
+        LR2 = -(len(dy.T)-2)*sumk2
+        sumk3 = np.sum(np.log(np.ones(3-i)-eig3[i:]))
+        LR3 = -(len(dy.T)-3)*sumk3   
+        
+        LR[:,i] = np.array([LR1, LR2, LR3])
     
+    print('LR test statistics = ',LR)
     
     return
 
@@ -764,9 +775,9 @@ def main():
     path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\triv_ts.txt"
     df = loadin_data(path)
     
-    #output_Q1(df)
-    #estimates = output_Q4(df)
-    #output_Q5(estimates)
+    output_Q1(df)
+    estimates = output_Q4(df)
+    output_Q5(estimates)
     output_Q6(df)
 
 ###########################################################
