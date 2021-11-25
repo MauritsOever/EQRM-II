@@ -1472,11 +1472,7 @@ def main():
     output_Q1(df)
     Output_Q2(df)
     output_Q3(df)
-<<<<<<< HEAD
 
-    
-=======
->>>>>>> 9967b856440fdb004a4939d88a721c439eff4898
     estimates = output_Q4(df)
     output_Q5(estimates)
     output_Q6(df)
