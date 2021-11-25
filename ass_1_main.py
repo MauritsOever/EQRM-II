@@ -10,6 +10,7 @@ Created on Tue Nov  9 12:01:46 2021
 
 # load in packages
 import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn'
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -24,7 +25,6 @@ import scipy.optimize as opt
 
 
 # load in data
-
 def loadin_data(path):
     data = pd.read_csv(path, sep = ";").iloc[:,1:]
     # okay so the numbers have commas, so they're interpreted as strings, lets see if we can change it
@@ -251,7 +251,7 @@ def output_Q1(df):
 ###############################################################################
 ### output_Q2
 def Output_Q2(df):
-    """Prints output used to answer question 2 part a."""
+    """Prints output used to answer question 2"""
     def data_feeder(df, series):
         """Transforms dataframe into numpy array of appropriate layout for input
         in the subsequent maximum likelihood optimisation. Selectes data only up
@@ -579,6 +579,7 @@ def Output_Q2(df):
     arma_models = [(1,0), (2,0), (1,1), (2,1), (1,2), (2,2)]
     series_list = ["DJIA.Ret", "N225.Ret", "SSMI.Ret"]
     #a)
+    print("Question 2 a)")
     for series in series_list:
         print(series)
         (vY, mX) = data_feeder(df = df, series = series)
@@ -672,7 +673,7 @@ def Output_Q2(df):
 
             latex = a2l.to_ltx(latex_output, frmt = '{:.6f}', mathform = False)
             print(latex)
-    #c)
+    print("Question 2 c)")
     (vResiduals_DJIA, vResiduals_N225, vResiduals_SSMI) = CalcResiduals(df, lParameters, vSeriesNames)
 
     ACF_list = []
@@ -732,7 +733,182 @@ def Output_Q2(df):
 
 
 ###############################################################################
+###output_Q3
+def output_Q3(df):
+    print("Question 3 a:")
+    def data_prep(df, sSeries):
+        Parameters = {"DJIA.Ret": [0.000145, -0.068644, -0.046275], "N225.Ret": [-0.000136, -0.035088, -0.033655], "SSMI.Ret": [0.000006, 0.140633, -0.135125, -0.041509]}
+        df.rename(columns={"Day":"Date"}, inplace=True)
+        df = df.set_index("Date")
+        df = df[["DJIA.Ret", "N225.Ret", "SSMI.Ret"]].loc["2010-12-29":]
+        y = pd.DataFrame({"t": df[sSeries].shift(-1), "t-1": df[sSeries].shift(0), "e_t" : 0, "e_t-1": 0})
+        vParams = Parameters[sSeries]
+        if sSeries == "SSMI.Ret":
+            (iN, iK) = y.shape
+            for row in range(0, iN - 1):
+                y["e_t"].iloc[row] = y["t"].iloc[row + 1] - (vParams[0]
+                + vParams[1] * y["t"].iloc[row] + vParams[2] * y["e_t"].iloc[row] 
+                + vParams[3] * y["e_t-1"].iloc[row])
 
+            y["e_t-1"].iloc[:] = y["e_t"].shift(1)
+            y = y.dropna()
+        return y
+
+###############################################################################
+    def forecast_creator(y, h, vParams, model):
+        (iN, iK) = y.shape
+        #Loop through and stop before the last five observations.
+        if model == "AR(2)":
+            if h == 1:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = vParams[0] + vParams[1] * y["t"].iloc[row] + vParams[2] * y["t-1"].iloc[row]
+            
+            if h == 2:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0] + vParams[1] * vParams[0] 
+                    + (vParams[1]**2) * y["t"].iloc[row] + vParams[1] * vParams[2] * y["t-1"].iloc[row]
+                    + vParams[2] * y["t"].iloc[row])
+            
+            if h == 3:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0] + vParams[1] * vParams[0] 
+                    + (vParams[1]**2) * vParams[0] + (vParams[1]**3) * y["t"].iloc[row]
+                    + (vParams[1]**2) * vParams[2] * y["t-1"].iloc[row]
+                    + vParams[1] * vParams[0] * y["t"].iloc[row] 
+                    + vParams[2] * vParams[0] + vParams[1] * vParams[2] * y["t"].iloc[row]
+                    + (vParams[2]**2) * y["t-1"].iloc[row])
+
+            if h == 4:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0] + vParams[1] * vParams[0] 
+                    + (vParams[1]**2) * vParams[0] + (vParams[1]**3) * vParams[0]
+                    + (vParams[1]**4) * y["t"].iloc[row] + (vParams[1]**3) * vParams[2] * y["t-1"].iloc[row]
+                    + (vParams[1]**2) * vParams[2] * y["t"].iloc[row] + vParams[0] * vParams[1] * vParams[2]
+                    + (vParams[1]**2) * vParams[2] * y["t"].iloc[row] + (vParams[2]**2) * y["t-1"].iloc[row]
+                    + vParams[2] * vParams[0] + vParams[1] * vParams[2] * vParams[0]
+                    + (vParams[1]**2) * vParams[2] * y["t"].iloc[row] + vParams[1] * (vParams[2]**2) * y["t-1"].iloc[row]
+                    + (vParams[2]**2) * y["t"].iloc[row])
+
+            if h == 5:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0] + vParams[1] * ((vParams[0] + vParams[1] * vParams[0] 
+                    + (vParams[1]**2) * vParams[0] + (vParams[1]**3) * vParams[0]
+                    + (vParams[1]**4) * y["t"].iloc[row] + (vParams[1]**3) * vParams[2] * y["t-1"].iloc[row]
+                    + (vParams[1]**2) * vParams[2] * y["t"].iloc[row] + vParams[0] * vParams[1] * vParams[2]
+                    + (vParams[1]**2) * vParams[2] * y["t"].iloc[row] + (vParams[2]**2) * y["t-1"].iloc[row]
+                    + vParams[2] * vParams[0] + vParams[1] * vParams[2] * vParams[0]
+                    + (vParams[1]**2) * vParams[2] * y["t"].iloc[row] + vParams[1] * (vParams[2]**2) * y["t-1"].iloc[row]
+                    + (vParams[2]**2) * y["t"].iloc[row])) + vParams[2] * ((vParams[0] + vParams[1] * vParams[0] 
+                    + (vParams[1]**2) * vParams[0] + (vParams[1]**3) * y["t"].iloc[row]
+                    + (vParams[1]**2) * vParams[2] * y["t-1"].iloc[row] 
+                    + vParams[1] * vParams[0] * y["t"].iloc[row] 
+                    + vParams[2] * vParams[0] + vParams[1] * vParams[2] * y["t"].iloc[row]
+                    + (vParams[2]**2) * y["t-1"].iloc[row])))
+
+        if model == "ARMA(1,2)":
+            if h == 1:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0] + vParams[1] * y["t"].iloc[row]
+                    + vParams[2] * y["e_t"].iloc[row] + vParams[3] * y["e_t-1"].iloc[row])
+
+            if h == 2:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0] + vParams[1] * (vParams[0] + vParams[1] * y["t"].iloc[row]
+                    + vParams[2] * y["e_t"].iloc[row] + vParams[3] * y["e_t-1"].iloc[row])
+                    + vParams[2] * y["e_t"].iloc[row + 1 ] + vParams[3] * y["e_t-1"].iloc[row + 1])
+
+            if h == 3:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0] 
+                    + vParams[1] * (vParams[0] + vParams[1] * (vParams[0] + vParams[1] * y["t"].iloc[row]
+                    + vParams[2] * y["e_t"].iloc[row] + vParams[3] * y["e_t-1"].iloc[row])
+                    + vParams[2] * y["e_t"].iloc[row + 1 ] + vParams[3] * y["e_t-1"].iloc[row + 1])
+                    + vParams[2] * y["e_t"].iloc[row + 2 ] + vParams[3] * y["e_t-1"].iloc[row+ 2])
+
+            if h == 4:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0] 
+                    + vParams[1] * (vParams[0] 
+                    + vParams[1] * (vParams[0] + vParams[1] * (vParams[0] + vParams[1] * y["t"].iloc[row]
+                    + vParams[2] * y["e_t"].iloc[row] + vParams[3] * y["e_t-1"].iloc[row])
+                    + vParams[2] * y["e_t"].iloc[row + 1 ] + vParams[3] * y["e_t-1"].iloc[row + 1])
+                    + vParams[2] * y["e_t"].iloc[row + 2 ] + vParams[3] * y["e_t-1"].iloc[row + 2])
+                    + vParams[2] * y["e_t"].iloc[row + 3 ]+ vParams[3] * y["e_t-1"].iloc[row + 3])
+
+            if h == 5:
+                y["y_t+" + str(h)] = 0
+                for row in range(0, (iN - 5) + 1):
+                    y["y_t+" + str(h)].iloc[row] = (vParams[0]
+                    + vParams[1] * (vParams[0] 
+                    + vParams[1] * (vParams[0] 
+                    + vParams[1] * (vParams[0] + vParams[1] * (vParams[0] + vParams[1] * y["t"].iloc[row]
+                    + vParams[2] * y["e_t"].iloc[row] + vParams[3] * y["e_t-1"].iloc[row])
+                    + vParams[2] * y["e_t"].iloc[row + 1 ] + vParams[3] * y["e_t-1"].iloc[row + 1])
+                    + vParams[2] * y["e_t"].iloc[row + 2 ] + vParams[3] * y["e_t-1"].iloc[row + 2])
+                    + vParams[2] * y["e_t"].iloc[row + 3 ]+ vParams[3] * y["e_t-1"].iloc[row + 3])
+                    + vParams[2] * y["e_t"].iloc[row + 4 ]+ vParams[3] * y["e_t-1"].iloc[row + 4])
+
+        return y
+
+###############################################################################
+    def RMSPE_MAPE(df_forecast, h):
+        y_pred = df_forecast["y_t+" + str(h)]
+        y_true = df_forecast["t"].shift(-h)
+
+        # plt.plot(y_pred, label = "Predicted")
+        # plt.plot(y_true, label = "True", alpha = 0.5)
+
+        df_compare = pd.DataFrame({"y_pred": y_pred, "y_true": y_true})
+        df_compare = df_compare.dropna()
+        (iN, iK) = df_compare.shape
+
+        print("\nRMSPE t+" + str(h) + "forecast: ")
+        rmse = np.sqrt((np.sum((df_compare["y_pred"] - df_compare["y_true"])**2)/iN))
+        print(rmse)
+        print("\nMAPE t+" + str(h) + "forecast: ")
+        mape = (np.sum(np.absolute(df_compare["y_pred"] - df_compare["y_true"]))/iN)
+        print(mape)
+        
+        return
+
+###############################################################################
+    # magic numbers
+    path = r"triv_ts.txt"
+    df = loadin_data(path)
+    vSeries = ["DJIA.Ret", "N225.Ret", "SSMI.Ret"]
+    Parameters = {"DJIA.Ret": [0.000145, -0.068644, -0.046275], "N225.Ret": [-0.000136, -0.035088, -0.033655], "SSMI.Ret": [0.000006, 0.140633, -0.135125, -0.041509]}
+
+    for returns in vSeries:
+        print("\n" + returns + ":")
+        y = data_prep(df, sSeries= returns)
+
+        if returns == "SSMI.Ret":
+            model = "ARMA(1,2)"
+        else:
+            model = "AR(2)"
+
+        for i in range(1, 6):
+            df_forecast = forecast_creator(y, h = i, vParams=Parameters[returns], model = model)
+
+        y_pred = df_forecast["y_t+" + str(1)]
+        y_true = df_forecast["t"].shift(-1)
+        plt.plot(y_pred, label = "Predicted")
+        plt.plot(y_true, label = "True", alpha = 0.5)
+        plt.legend()
+        plt.show()
+
+        for i in range(1, 6):
+            RMSPE_MAPE(df_forecast, i)
+###############################################################################
 ### output_Q4
 def output_Q4(df):
     """
@@ -1266,6 +1442,12 @@ def main():
     # now call the functions that print all of the output for all questions
     output_Q1(df)
     Output_Q2(df)
+<<<<<<< HEAD
+    output_Q3(df)
+
+    
+=======
+>>>>>>> a9c3c5382d16326b7dff210613a98bcff5da4595
     estimates = output_Q4(df)
     output_Q5(estimates)
     output_Q6(df)
