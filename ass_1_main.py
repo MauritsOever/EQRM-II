@@ -772,7 +772,7 @@ def output_Q4(df):
         for j in range(0,3):
             ax[i,j].plot(cross_covs[:,column_count])
             ax[i,j].axhline()
-            ax[i,j].set_title(rets[i]+', '+rets[j])
+            ax[i,j].set_title(rets[i]+', '+rets[j]) # loop that plots all the cross covariances
             column_count += 1
     plt.tight_layout()
     plt.show()
@@ -795,10 +795,11 @@ def output_Q4(df):
     params[0:3] = beta_OLS[0,:]
     params[3:6] = beta_OLS[1:,0] 
     params[6:9] = beta_OLS[1:,1] 
-    params[9:] = beta_OLS[1:,2]
+    params[9:] = beta_OLS[1:,2] # you can only pass an array of shape (n,) to sc.opt so gotta squish them in params...
     
     # now the ML routine...
     def log_lik_var1(y, params):
+        # function that gets vector of log likelihood based on params for the var 1
         mu = np.reshape(params[0:3], (3,1))
         phi = np.reshape(params[3:], (3,3))
         
@@ -929,8 +930,8 @@ def output_Q4(df):
                     P_hat[i][k] = (1.0 / P_hat[k][k] * (matrix[i][k] - tmp_sum))
         return P_hat
 
-    P_hat_var1 = cholesky_decomp(sigma_hat_var1)
-    P_hat_var2 = cholesky_decomp(sigma_hat_var2)
+    P_hat_var1 = cholesky_decomp(sigma_hat_var1) # get P hat
+    P_hat_var2 = cholesky_decomp(sigma_hat_var2) 
     
     print('P_hat for VAR(1) = ')
     print(P_hat_var1.round(decimals=4))
@@ -941,7 +942,7 @@ def output_Q4(df):
     print('')
     
     Q5_ests = {'P_hat_var1':P_hat_var1, 'P_hat_var2':P_hat_var2, 'phi_hat_var1':phi_hat_var1,
-               'phi1': phi1, 'phi2':phi2}
+               'phi1': phi1, 'phi2':phi2} # needed for Q5 orthogonal IRF's
     
     
     return Q5_ests
@@ -974,13 +975,13 @@ def output_Q5(estimates):
     store3 = np.empty((IRFlen,3))
     
     for i in range(1, IRFlen+1):
-        store1[i-1,:] = np.reshape(estimates['phi_hat_var1']**(i-1)@estimates['P_hat_var1']@selection1, (3,))
+        store1[i-1,:] = np.reshape(estimates['phi_hat_var1']**(i-1)@estimates['P_hat_var1']@selection1, (3,)) # implement var1 IRF formula
         store2[i-1,:] = np.reshape(estimates['phi_hat_var1']**(i-1)@estimates['P_hat_var1']@selection2, (3,))
         store3[i-1,:] = np.reshape(estimates['phi_hat_var1']**(i-1)@estimates['P_hat_var1']@selection3, (3,))
         
     fig, ax = plt.subplots(3,3, figsize= (15,10))
     ax[0,0].plot(store1[:,0])
-    ax[0,0].set_title('Effect of DJIA shock on DJIA')
+    ax[0,0].set_title('Effect of DJIA shock on DJIA') # plot them ALL
     ax[0,1].plot(store1[:,1])
     ax[0,1].set_title('Effect of N225 shock on DJIA')
     ax[0,2].plot(store1[:,2])
@@ -998,7 +999,7 @@ def output_Q5(estimates):
     ax[2,2].plot(store3[:,2])
     ax[2,2].set_title('Effect of SSMI shock on SSMI')
     plt.tight_layout()
-    plt.show()
+    plt.show() # looks pretty good right
     
     print('Question 5 IRF for VAR(2)')
     print('')
@@ -1013,14 +1014,14 @@ def output_Q5(estimates):
             store2[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection2, (3,))
             store3[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection3, (3,))
         else:
-            store1[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection1 + estimates['phi2']**(i-1)@estimates['P_hat_var2']@selection1, (3,))
+            store1[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection1 + estimates['phi2']**(i-1)@estimates['P_hat_var2']@selection1, (3,)) # add second phi for h>1
             store2[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection2 + estimates['phi2']**(i-1)@estimates['P_hat_var2']@selection1, (3,))
             store3[i-1,:] = np.reshape(estimates['phi1']**(i-1)@estimates['P_hat_var2']@selection3 + estimates['phi2']**(i-1)@estimates['P_hat_var2']@selection1, (3,))
 
 
     fig, ax = plt.subplots(3,3, figsize= (15,10))
     ax[0,0].plot(store1[:,0])
-    ax[0,0].set_title('Effect of DJIA shock on DJIA')
+    ax[0,0].set_title('Effect of DJIA shock on DJIA') # plot them
     ax[0,1].plot(store1[:,1])
     ax[0,1].set_title('Effect of N225 shock on DJIA')
     ax[0,2].plot(store1[:,2])
@@ -1038,7 +1039,7 @@ def output_Q5(estimates):
     ax[2,2].plot(store3[:,2])
     ax[2,2].set_title('Effect of SSMI shock on SSMI')
     plt.tight_layout()
-    plt.show()
+    plt.show() # okay not bad
 
     return
 
@@ -1068,7 +1069,7 @@ def output_Q6(df):
     dyt = dy[:,1:]
     
     # initialize parameters
-    params = np.zeros(12)
+    params = np.zeros(12) # initialize, just took zeros because of time constraints
     
     
     def log_lik_vecm1(dyt, ylag1, params):
@@ -1090,7 +1091,7 @@ def output_Q6(df):
     AvgNLL = lambda params : -np.mean(log_lik_vecm1(dyt, ylag1, params)) # define function to be minimized 
     res_vecm1   = opt.minimize(AvgNLL, params, method='Powell') # algos that work: Powell, SLSQP
     print(res_vecm1.message)
-    mu_hat = np.reshape(res_vecm1.x[0:3], (3,1))
+    mu_hat = np.reshape(res_vecm1.x[0:3], (3,1)) # get ests from res
     PI_hat1 = np.reshape(res_vecm1.x[3:12], (3,3))
     eps = dyt - PI_hat1@ylag1 - mu_hat
     sigma_hat = (eps@eps.T)/len(dyt.T)
@@ -1105,7 +1106,7 @@ def output_Q6(df):
     m = 18
     T = len(dy[:,1:].T)
     
-    AIC_vecm1 = np.log(np.linalg.det(sigma_hat)) + 2*m/T
+    AIC_vecm1 = np.log(np.linalg.det(sigma_hat)) + 2*m/T # get information criteria
     AICc_vecm1 = np.log(np.linalg.det(sigma_hat)) + 2*m/T*((T+2*m)/(T-m-1)) 
     BIC_vecm1 = np.log(np.linalg.det(sigma_hat)) + m*np.log(T)/T
     
@@ -1232,16 +1233,16 @@ def output_Q6(df):
     # question 4b
     print('Question 6b: ')
     # first get LR for all PI's...
-    eig1 = np.linalg.eig(PI_hat1)[0]
+    eig1 = np.linalg.eig(PI_hat1)[0] # get eigenvalues
     eig2 = np.linalg.eig(PI_hat2)[0]
     eig3 = np.linalg.eig(PI_hat3)[0]
     
     LR = np.empty((3,3))
     
     for i in range(3):
-        sumk1 = np.sum(np.log(np.ones(3-i)-eig1[i:]))
+        sumk1 = np.sum(np.log(np.ones(3-i)-eig1[i:])) # get Johansen trace test statistic,
         LR1 = -(len(dy.T)-1)*sumk1
-        sumk2 = np.sum(np.log(np.ones(3-i)-eig2[i:]))
+        sumk2 = np.sum(np.log(np.ones(3-i)-eig2[i:])) # we suspect the obtained statistics are wrong :(, but we don't know why
         LR2 = -(len(dy.T)-2)*sumk2
         sumk3 = np.sum(np.log(np.ones(3-i)-eig3[i:]))
         LR3 = -(len(dy.T)-3)*sumk3   
@@ -1262,6 +1263,7 @@ def main():
     path = r"triv_ts.txt"
     df = loadin_data(path)
     
+    # now call the functions that print all of the output for all questions
     output_Q1(df)
     Output_Q2(df)
     estimates = output_Q4(df)
