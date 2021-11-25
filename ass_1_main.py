@@ -493,19 +493,20 @@ def Output_Q2(df):
         return mH
 ################################################################################
     def CalcResiduals(df, lParameters, vSeriesNames):
+        """Calculates residuals for given model parameters."""
         for count, sSeriesName in enumerate(vSeriesNames):
             (vY, mX) = data_feeder(df, series = sSeriesName)
             (iN, iK) = mX.shape
             vBeta = lParameters[count]
             if (sSeriesName == "DJIA.Ret" or sSeriesName == "N225.Ret"):
-                #AR(2)
+                #AR(2) residuals
                 for i in range(0, iN):
                     mX[i, 2] = (vY[i] - mX[i, 0] * vBeta[0] - mX[i, 1] * vBeta[1]
                     - mX[i - 1, 1] * vBeta[2])
                 if sSeriesName == "DJIA.Ret":
                     vResiduals_DJIA = mX[:, 2]
             if sSeriesName == "SSMI.Ret":
-                #ARMA(1,2)
+                #ARMA(1,2) residuals
                 for i in range(2, iN):
                         mX[i, 2] = (vY[i] - mX[i, 0] * vBeta[0] - mX[i, 1] * vBeta[1] 
                         - mX[i - 1, 2] * vBeta[2]- mX[i - 2, 2] * vBeta[3])
@@ -519,6 +520,7 @@ def Output_Q2(df):
         return vResiduals_DJIA, vResiduals_N225, vResiduals_SSMI
 ################################################################################
     def ACF(vSeries, iLags):
+        """Calculates ACF for given residual series."""
         vAC = np.ones(iLags)
         for lag in range(1, iLags):
             vY_lag = vSeries[:-(lag)]
@@ -531,6 +533,7 @@ def Output_Q2(df):
         return vAC
 ################################################################################
     def PACF(vSeries, iLags):
+        """Calculates PACF for given residual series."""
         df = pd.DataFrame({"t":vSeries})
 
         vPACF = np.ones(iLags + 1)
@@ -543,13 +546,14 @@ def Output_Q2(df):
             df.insert(loc=0, column="constant", value =1)
             mX = np.array(df)
             vY = vSeries[iLags:]
-
+            #Estimate AR(x) of increasing order for PACF values.
             vBeta = np.linalg.inv(mX.T@mX)@mX.T@vY
             vPACF[phi] = vBeta[phi]
         vPACF = vPACF[1:]
         return vPACF
 ################################################################################
     def LjungBox(vAutoCorrelation, iT):
+        """Calculates Ljung-Box text statistic for given vector of autocorrelations"""
         dChi2 = 1.145
         dFirstTerm = iT*(iT + 2)
         dSecondTerms = []
@@ -557,6 +561,7 @@ def Output_Q2(df):
             dSecondTerms.append((vAutoCorrelation[lag]**2)/(iT-lag))
             dSecondTerm = np.sum(dSecondTerms)
         Q = dFirstTerm * dSecondTerm
+        #Test if residuals are white noise.
         if Q < dChi2:
             print("Q = " + str(Q) + "\nResiduals are white noise:" + "\n" + str(Q) 
             + "< " + str(dChi2))
@@ -566,6 +571,7 @@ def Output_Q2(df):
         return Q
 ################################################################################
     def JarqueBera(vSeries):
+        """Calculate Jarque-Bera test statistic."""
         iN = len(vSeries)
         dJB = (iN/6 * (sc.skew(vSeries)**2) + 1/4 * (sc.kurtosis(vSeries)-3)**2)
         return dJB
@@ -578,27 +584,38 @@ def Output_Q2(df):
     df = loadin_data(path)
     arma_models = [(1,0), (2,0), (1,1), (2,1), (1,2), (2,2)]
     series_list = ["DJIA.Ret", "N225.Ret", "SSMI.Ret"]
+
     #a)
     print("Question 2 a)")
+    #Loop through series and fill latex table with results.
     for series in series_list:
         print(series)
         (vY, mX) = data_feeder(df = df, series = series)
         if series == "DJIA.Ret":
             latex_output = np.zeros((15, 6))
+
         if (series == "N225.Ret" or series == "SSMI.Ret"):
             latex_extra = np.zeros((15, 6))
             latex_output = np.concatenate((latex_output, latex_extra), axis = 1)
+
         shift = 0
+
         if series == "N225.Ret":
             shift = 6
+
         if series == "SSMI.Ret":
             shift = 12
+
         for column, model in enumerate(arma_models):
             #Maximum likelihood estimator and reporting.
+
             (iN, iK) = mX.shape
+
             (p,q) = model
+
             print("\nARMA({}, {})".format(p,q))
             (vP_MLE, dLL) = EstRegNorm(vY, mX, p, q)
+
             print("\nSigma: {}".format(vP_MLE[0]) + "\nMu: {}".format(vP_MLE[1])
             + "\nFirst {} are AR coefficients, subsequent {} are MA "
             "coefficients:".format(p, q) + "\n{}".format(vP_MLE[2:]) 
@@ -674,8 +691,10 @@ def Output_Q2(df):
             latex = a2l.to_ltx(latex_output, frmt = '{:.6f}', mathform = False)
             print(latex)
     print("Question 2 c)")
+    #Calculate residuals.
     (vResiduals_DJIA, vResiduals_N225, vResiduals_SSMI) = CalcResiduals(df, lParameters, vSeriesNames)
 
+    #Calculate ACF and PACF
     ACF_list = []
     PACF_list = []
     Residuals_list = [vResiduals_DJIA, vResiduals_N225, vResiduals_SSMI]
@@ -721,9 +740,11 @@ def Output_Q2(df):
     ax6.axhline(-2/np.sqrt(3021), color = "r", linestyle = "dashed")
     plt.tight_layout()
 
+    #Calculate Ljung-Box test statistic.
     for vACF in ACF_list:
         LjungBox(vAutoCorrelation = vACF, iT = 3021)
 
+    #Calculate Jarque-Bera test statistic.
     print("JB Statistic for DJIA, N225 and SSMI:")
     for vResidual in Residuals_list:
         print("\n"+str(JarqueBera(vResidual)))
@@ -737,12 +758,14 @@ def Output_Q2(df):
 def output_Q3(df):
     print("Question 3 a:")
     def data_prep(df, sSeries):
+        #Prepare data.
         Parameters = {"DJIA.Ret": [0.000145, -0.068644, -0.046275], "N225.Ret": [-0.000136, -0.035088, -0.033655], "SSMI.Ret": [0.000006, 0.140633, -0.135125, -0.041509]}
         df.rename(columns={"Day":"Date"}, inplace=True)
         df = df.set_index("Date")
         df = df[["DJIA.Ret", "N225.Ret", "SSMI.Ret"]].loc["2010-12-29":]
         y = pd.DataFrame({"t": df[sSeries].shift(-1), "t-1": df[sSeries].shift(0), "e_t" : 0, "e_t-1": 0})
         vParams = Parameters[sSeries]
+        #Calculate residuals.
         if sSeries == "SSMI.Ret":
             (iN, iK) = y.shape
             for row in range(0, iN - 1):
@@ -756,8 +779,10 @@ def output_Q3(df):
 
 ###############################################################################
     def forecast_creator(y, h, vParams, model):
+        """Create forcasts for given dataframe, parameters,forecast horizon and model."""
         (iN, iK) = y.shape
         #Loop through and stop before the last five observations.
+        #Recursive forecasts.
         if model == "AR(2)":
             if h == 1:
                 y["y_t+" + str(h)] = 0
@@ -861,6 +886,8 @@ def output_Q3(df):
 
 ###############################################################################
     def RMSPE_MAPE(df_forecast, h):
+        """Calculates RMSPE and MAPE for given dataframe containing forecasted
+        values and true values."""
         y_pred = df_forecast["y_t+" + str(h)]
         y_true = df_forecast["t"].shift(-h)
 
@@ -887,6 +914,7 @@ def output_Q3(df):
     vSeries = ["DJIA.Ret", "N225.Ret", "SSMI.Ret"]
     Parameters = {"DJIA.Ret": [0.000145, -0.068644, -0.046275], "N225.Ret": [-0.000136, -0.035088, -0.033655], "SSMI.Ret": [0.000006, 0.140633, -0.135125, -0.041509]}
 
+    #Forecasting errors per series.
     for returns in vSeries:
         print("\n" + returns + ":")
         y = data_prep(df, sSeries= returns)
@@ -899,6 +927,7 @@ def output_Q3(df):
         for i in range(1, 6):
             df_forecast = forecast_creator(y, h = i, vParams=Parameters[returns], model = model)
 
+        #Plot forecasted and true value for horizon = 1.
         y_pred = df_forecast["y_t+" + str(1)]
         y_true = df_forecast["t"].shift(-1)
         plt.plot(y_pred, label = "Predicted")
@@ -1440,12 +1469,9 @@ def main():
     
     output_Q1(df)
     Output_Q2(df)
-<<<<<<< HEAD
     output_Q3(df)
 
     
-=======
->>>>>>> a9c3c5382d16326b7dff210613a98bcff5da4595
     estimates = output_Q4(df)
     output_Q5(estimates)
     output_Q6(df)
