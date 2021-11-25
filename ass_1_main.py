@@ -1442,12 +1442,7 @@ def main():
     # now call the functions that print all of the output for all questions
     output_Q1(df)
     Output_Q2(df)
-<<<<<<< HEAD
     output_Q3(df)
-
-    
-=======
->>>>>>> a9c3c5382d16326b7dff210613a98bcff5da4595
     estimates = output_Q4(df)
     output_Q5(estimates)
     output_Q6(df)
