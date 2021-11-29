@@ -13,6 +13,8 @@ Created on Mon Nov 29 16:00:04 2021
 # import pachages
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as sc
 
 
 # define needed functions below
@@ -41,12 +43,54 @@ def loadin_data(path):
 
     return df_test, df_real
 
+###########################################################
+### output_Q1
+def output_Q1(df):
+    """
+    function that handles all the output for Question 1
 
-#%%
-# test output cell without involving main()
-    path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
-    df_test, _ = loadin_data(path)
+    Parameters
+    ----------
+    df : can be df_test or df_real, so it can be used to check code and generate output for Q1
 
+    Returns
+    -------
+    None.
+
+    """
+    print('Question 1: ')
+    print('')
+
+    series = df.columns
+    index = df.index
+    
+    # plotting the return series
+    print('Plots: ')
+    fig, ax = plt.subplots(1,len(series), figsize=(15,5))
+    for i in range(len(series)):
+        ax[i].plot(index, df[series[i]])
+        ax[i].set_title(series[i].replace('_ret',''))
+    plt.tight_layout()
+    plt.show()
+    
+    
+    # summary statistics calculation
+    print('Summary statistics: ')
+    print('')
+    summstats_df = pd.DataFrame()
+    for i in series:
+        summstats_df[i] = [len(df[i]), np.mean(df[i]), np.median(df[i]), np.std(df[i]), 
+                     sc.skew(df[i]), sc.kurtosis(df[i]), min(df[i]), max(df[i])]
+    summstats_df.index = ['Number of obs', 'mean', 'median', 'std', 'skewness', 'kurtosis', 'min', 'max']
+    pd.set_option("display.max_columns", None)
+    print(summstats_df.T)
+    print('')
+    
+    # print('LaTeX output: ') # for the report
+    # print(summstats_df.T.to_latex())
+    # print('')
+    
+    return
 
 
 
@@ -57,7 +101,7 @@ def main():
     # magic numbers
     path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
     df_test, df_real = loadin_data(path)
-    
+    output_Q1(df_real)
     
     # now call the functions that print all of the output for all questions
 
