@@ -12,7 +12,7 @@ Created on Mon Nov 29 16:00:04 2021
 
 # import pachages
 import pandas as pd
-
+import numpy as np
 
 
 # define needed functions below
@@ -42,6 +42,15 @@ def loadin_data(path):
     return df_test, df_real
 
 
+#%%
+# test output cell without involving main()
+    path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
+    df_test, _ = loadin_data(path)
+
+
+
+
+#%% 
 ###########################################################
 ### main
 def main():
