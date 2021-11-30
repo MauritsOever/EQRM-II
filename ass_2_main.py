@@ -8,6 +8,9 @@ Created on Mon Nov 29 16:00:04 2021
 @author: Donald Hagestein, Connor Stevens and Maurits van den Oever
 
 """
+def theTruth():
+    print('MAURITS LOVES PEE PEE')
+    return
 
 
 # import pachages
@@ -109,3 +112,4 @@ def main():
 ### start main
 if __name__ == "__main__":
     main()
+    theTruth()
