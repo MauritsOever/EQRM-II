@@ -6,7 +6,7 @@ Assignment 1 main
 Created on Mon Nov 29 16:00:04 2021
 
 @author: Donald Hagestein, Connor Stevens and Maurits van den Oever
-
+#tryout
 """
 
 
