@@ -107,12 +107,7 @@ def output_Q4(df, estimates):
     -------
     None.
 
-    """
-    # placeholder estimates...
-    estimates = np.array([[0.0, 0.0, 0.9, 0.05, 0.4, 5, 1],
-                          [0.0, 0.0, 0.9, 0.05, 0.4, 5, 1],
-                          [0.0, 0.0, 0.9, 0.05, 0.4, 5, 1]])
-    
+    """  
     series = df.columns
     # to do:
         # get vola's for all series...
@@ -127,7 +122,7 @@ def output_Q4(df, estimates):
         if xlag1 < 0:
             delta = 0
         
-        if lev == True:
+        if lev == False:
             delta = 0
         sigma_t = omega + (beta + ((alpha*diffsq + delta*diffsq)/(sigmalag1 + (1/Lambda)*diffsq)))*sigmalag1
         
@@ -135,9 +130,9 @@ def output_Q4(df, estimates):
     
     volas_lev = np.ones((len(df), 3)) # volatilities with leverage
     volas_nolev = np.ones((len(df), 3)) # volatilities without leverage
-    fig, ax = plt.subplots(3,2)
+    fig, ax = plt.subplots(3,2, figsize=(15,10))
     
-    for i in range(1):
+    for i in range(3):
         mu = estimates[i, 0]
         omega = estimates[i, 1] 
         beta = estimates[i, 2]
@@ -146,6 +141,9 @@ def output_Q4(df, estimates):
         Lambda = estimates[i, 5]
         sigma1 = estimates[i, 6]
         
+        volas_lev[0,i] = sigma1
+        volas_nolev[0,i] = sigma1
+        
         for j in range(1, len(volas_lev)):
             volas_lev[j,i] = sigma_t(df.iloc[j-1,i], mu, omega, beta, alpha, delta, Lambda, volas_lev[j-1,i], True)
             volas_nolev[j,i] = sigma_t(df.iloc[j-1,i], mu, omega, beta, alpha, delta, Lambda, volas_nolev[j-1,i], False)
@@ -153,20 +151,36 @@ def output_Q4(df, estimates):
         # get range of xt...
         # get answers of sigmat+1 based on this xt, for lev and no lev
         # plot then
-        ax[i, 0].plot() # NIC here...
+        rangext = np.linspace(-0.5, 0.5, 100)
+        NIC_lev = np.empty((len(rangext),))
+        NIC_nolev = np.empty((len(rangext),))
+        for t in range(len(rangext)):
+            NIC_lev[t] = sigma_t(rangext[t], mu, omega, beta, alpha, delta, Lambda, volas_lev[2500,i], True)
+            NIC_nolev[t] = sigma_t(rangext[t], mu, omega, beta, alpha, delta, Lambda, volas_nolev[2500,i], False)            
+        
+        ax[i, 0].plot(rangext, NIC_lev) # NIC here...
+        ax[i, 0].plot(rangext, NIC_nolev)
+        
         # title, axlabels, whatevs
-        ax[i, 1].plot(df.index, volas_lev[:,i]) # and maybe nolev as well??
-        
-        
+        ax[i, 1].plot(df.index[5:], volas_lev[5:,i]) # and maybe nolev as well??
+        ax[i, 1].plot(df.index[5:], volas_nolev[5:,i])
         
     plt.tight_layout()
     plt.show()
-        
-
-
-
+    
     return 
 
+
+#%%
+# placeholder estimates...
+estimates = np.array([[0.0, 0.0, 0.9, 0.05, 0.1, 5, 0.0003],
+                      [0.0, 0.0, 0.9, 0.05, 0.1, 5, 0.0003],
+                      [0.0, 0.0, 0.9, 0.05, 0.1, 5, 0.0003]])
+
+path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
+df_test, df_real = loadin_data(path)
+
+output_Q4(df_test, estimates)
 
 
 
