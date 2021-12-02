@@ -95,7 +95,7 @@ def output_Q1(df):
 
 def output_Q2():
     """Produces output for question 2."""
-
+    print("Question 2: ")
     def Sig2Hat(dOmega, dBeta, dAlpha, dXt, dMu, dDelta, dSig2Initial, dLambda):
         """Calculates variance for time t+1."""
         #If statements to handle indicator function.
@@ -126,6 +126,7 @@ def output_Q2():
     #Pre-determined lambda and delta values.
     vLambda = np.array([2, 5, 10, 50])
     vDelta = np.array([0, 1, 0.2, 0.4])
+    vXaxis = np.linspace(start=-6, stop= 6, num=12000)
     lNewsImpactCurves = []
 
     #Loop through values and store curves.
@@ -133,41 +134,46 @@ def output_Q2():
         for dLambda in vLambda:
             lNewsImpactCurves.append(RobustGarchLev(dLambda, dDelta).vSig2tPlus1)
 
+    print("\nPlots: ")
     #Plot curves.
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-    ax1.plot(lNewsImpactCurves[0], label = "d = 0, l = 2")
-    ax1.plot(lNewsImpactCurves[1], label = "d = 0, l = 5")
-    ax1.plot(lNewsImpactCurves[2], label = "d = 0, l = 10")
-    ax1.plot(lNewsImpactCurves[3], label = "d = 0, l = 50")
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex = True, sharey = True)
+    ax1.plot(vXaxis, lNewsImpactCurves[0], label = "d = 0, l = 2")
+    ax1.plot(vXaxis, lNewsImpactCurves[1], label = "d = 0, l = 5")
+    ax1.plot(vXaxis, lNewsImpactCurves[2], label = "d = 0, l = 10")
+    ax1.plot(vXaxis, lNewsImpactCurves[3], label = "d = 0, l = 50")
     ax1.set_ylim([0,20])
-    ax1.set_xlabel("Xt")
+    ax1.tick_params('x', labelbottom=False)
     ax1.set_ylabel("Sigma2_t+1")
     ax1.legend()
-    ax2.plot(lNewsImpactCurves[4], label = "d = 0.1, l = 2")
-    ax2.plot(lNewsImpactCurves[5], label = "d = 0.1, l = 5")
-    ax2.plot(lNewsImpactCurves[6], label = "d = 0.1, l = 10")
-    ax2.plot(lNewsImpactCurves[7], label = "d = 0.1, l = 50")
+    ax2.plot(vXaxis, lNewsImpactCurves[4], label = "d = 0.1, l = 2")
+    ax2.plot(vXaxis, lNewsImpactCurves[5], label = "d = 0.1, l = 5")
+    ax2.plot(vXaxis, lNewsImpactCurves[6], label = "d = 0.1, l = 10")
+    ax2.plot(vXaxis, lNewsImpactCurves[7], label = "d = 0.1, l = 50")
     ax2.set_ylim([0,20])
-    ax2.set_xlabel("Xt")
-    ax2.set_ylabel("Sigma2_t+1")
+    ax2.tick_params(
+        axis = 'x',
+        labelbottom=False)
+    ax2.tick_params(
+        axis = 'y',
+        labelleft=False)
     ax2.legend()
-    ax3.plot(lNewsImpactCurves[8], label = "d = 0.2, l = 2")
-    ax3.plot(lNewsImpactCurves[9], label = "d = 0.2, l = 5")
-    ax3.plot(lNewsImpactCurves[10], label = "d = 0.2, l = 10")
-    ax3.plot(lNewsImpactCurves[11], label = "d = 0.2, l = 50")
+    ax3.plot(vXaxis, lNewsImpactCurves[8], label = "d = 0.2, l = 2")
+    ax3.plot(vXaxis, lNewsImpactCurves[9], label = "d = 0.2, l = 5")
+    ax3.plot(vXaxis, lNewsImpactCurves[10], label = "d = 0.2, l = 10")
+    ax3.plot(vXaxis, lNewsImpactCurves[11], label = "d = 0.2, l = 50")
     ax3.set_ylim([0,20])
     ax3.set_xlabel("Xt")
     ax3.set_ylabel("Sigma2_t+1")
     ax3.legend()
-    ax4.plot(lNewsImpactCurves[12], label = "d = 0.4, l = 2")
-    ax4.plot(lNewsImpactCurves[13], label = "d = 0.4, l = 5")
-    ax4.plot(lNewsImpactCurves[14], label = "d = 0.4, l = 10")
-    ax4.plot(lNewsImpactCurves[15], label = "d = 0.4, l = 50")
+    ax4.plot(vXaxis, lNewsImpactCurves[12], label = "d = 0.4, l = 2")
+    ax4.plot(vXaxis, lNewsImpactCurves[13], label = "d = 0.4, l = 5")
+    ax4.plot(vXaxis, lNewsImpactCurves[14], label = "d = 0.4, l = 10")
+    ax4.plot(vXaxis, lNewsImpactCurves[15], label = "d = 0.4, l = 50")
     ax4.set_ylim([0,20])
     ax4.set_xlabel("Xt")
-    ax4.set_ylabel("Sigma2_t+1")
     ax4.legend()
     plt.tight_layout()
+    plt.show()
     
     return
 
@@ -180,7 +186,6 @@ def main():
     df_test, df_real = loadin_data(path)
     output_Q1(df_real)
     output_Q2()
-    
     # now call the functions that print all of the output for all questions
 
 ###########################################################
