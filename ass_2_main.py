@@ -15,6 +15,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as sc
+import datetime as dt
 
 
 # define needed functions below
@@ -119,7 +120,7 @@ def output_Q4(df, estimates):
         # calculates the next sigma based on the xt and params
         # every param is scalar, but lev is a bool
         diffsq = (xlag1-mu)**2
-        if xlag1 < 0:
+        if xlag1 > 0:
             delta = 0
         
         if lev == False:
@@ -151,19 +152,32 @@ def output_Q4(df, estimates):
         # get range of xt...
         # get answers of sigmat+1 based on this xt, for lev and no lev
         # plot then
-        rangext = np.linspace(-0.5, 0.5, 100)
+        rangext = np.linspace(-0.05, 0.05, 1000)
         NIC_lev = np.empty((len(rangext),))
         NIC_nolev = np.empty((len(rangext),))
         for t in range(len(rangext)):
             NIC_lev[t] = sigma_t(rangext[t], mu, omega, beta, alpha, delta, Lambda, volas_lev[2500,i], True)
-            NIC_nolev[t] = sigma_t(rangext[t], mu, omega, beta, alpha, delta, Lambda, volas_nolev[2500,i], False)            
+            NIC_nolev[t] = sigma_t(rangext[t], mu, omega, beta, alpha, delta, Lambda, volas_lev[2500,i], False)     
+            #NIC_lev[t] = sigma_t(rangext[t], mu, omega, beta, alpha, delta, Lambda, 1, True)
+            #NIC_nolev[t] = sigma_t(rangext[t], mu, omega, beta, alpha, delta, Lambda, 1, False)            
+
+            
         
         ax[i, 0].plot(rangext, NIC_lev) # NIC here...
         ax[i, 0].plot(rangext, NIC_nolev)
+        ax[i, 0].set_xlabel('xt')
+        ax[i, 0].set_ylabel('sigma2_t+1')
+        ax[i, 0].legend(['leverage','no leverage'])
+        # ax labels, legend
         
         # title, axlabels, whatevs
         ax[i, 1].plot(df.index[5:], volas_lev[5:,i]) # and maybe nolev as well??
         ax[i, 1].plot(df.index[5:], volas_nolev[5:,i])
+        ax[i, 1].axvline(pd.Timestamp('2009-12-10'), color='black', linestyle='--', linewidth=1)
+        ax[i, 1].set_xlabel('sigma2')
+        ax[i, 1].legend(['leverage', 'no leverage'])
+
+        
         
     plt.tight_layout()
     plt.show()
@@ -181,7 +195,6 @@ path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
 df_test, df_real = loadin_data(path)
 
 output_Q4(df_test, estimates)
-
 
 
 #%% 
