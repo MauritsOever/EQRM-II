@@ -275,11 +275,10 @@ def main():
     # magic numbers
     path = r"data_ass_2.csv"
     df_test, df_real = loadin_data(path)
-    output_Q1(df_real)
-    output_Q2()
 
     # now call the functions that print all of the output for all questions
     output_Q1(df_real)
+    output_Q2()
     
     #estimates = output_Q3(df)
     #output_Q4(df_test, estimates)
