@@ -184,20 +184,6 @@ def output_Q4(df, estimates):
     
     return 
 
-
-#%%
-# placeholder estimates...
-estimates = np.array([[0.0, 0.0, 0.9, 0.05, 0.1, 5, 0.0003],
-                      [0.0, 0.0, 0.9, 0.05, 0.1, 5, 0.0003],
-                      [0.0, 0.0, 0.9, 0.05, 0.1, 5, 0.0003]])
-
-path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
-df_test, df_real = loadin_data(path)
-
-output_Q4(df_test, estimates)
-
-
-#%% 
 ###########################################################
 ### main
 def main():
@@ -208,6 +194,8 @@ def main():
     # now call the functions that print all of the output for all questions
     output_Q1(df_real)
     
+    #estimates = output_Q3(df)
+    #output_Q4(df_test, estimates)
     
 ###########################################################
 ### start main
