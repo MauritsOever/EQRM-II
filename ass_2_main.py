@@ -104,90 +104,6 @@ def output_Q4(df, estimates):
     df : dataframe of returns, used for getting estimated volatilities
     estimates : output of parameter estimates from question 3
 
-def output_Q2():
-    """Produces output for question 2."""
-    print("Question 2: ")
-    def Sig2Hat(dOmega, dBeta, dAlpha, dXt, dMu, dDelta, dSig2Initial, dLambda):
-        """Calculates variance for time t+1."""
-        #If statements to handle indicator function.
-        if dXt < 0:
-            iIndicator = 1
-        else:
-            iIndicator = 0
-
-        #Variance calculation.
-        dSig2tPlus1 = dOmega + (dBeta + (dAlpha * (dXt - dMu)**2 + (dDelta * (dXt - dMu)**2) * iIndicator)/(dSig2Initial + 1/dLambda * (dXt - dMu)**2)) * dSig2Initial
-
-        return dSig2tPlus1
-
-    #Class for easily calculating news-impact curves.
-    class RobustGarchLev(object):
-    
-        def __init__(self, dLambda, dDelta):
-            self.dSig2Initial = 1
-            self.dMu = 0
-            self.dOmega = 0
-            self.dAlpha = 0.05
-            self.dBeta = 0.9
-            self.dLambda = dLambda
-            self.dDelta = dDelta
-            self.vX = np.linspace(start=-6, stop= 6, num=12000)
-            self.vSig2tPlus1 = [Sig2Hat(self.dOmega, self.dBeta, self.dAlpha, x, self.dMu, self.dDelta, self.dSig2Initial, self.dLambda) for x in self.vX]
-
-    #Pre-determined lambda and delta values.
-    vLambda = np.array([2, 5, 10, 50])
-    vDelta = np.array([0, 1, 0.2, 0.4])
-    vXaxis = np.linspace(start=-6, stop= 6, num=12000)
-    lNewsImpactCurves = []
-
-    #Loop through values and store curves.
-    for dDelta in vDelta:
-        for dLambda in vLambda:
-            lNewsImpactCurves.append(RobustGarchLev(dLambda, dDelta).vSig2tPlus1)
-
-    print("\nPlots: ")
-    #Plot curves.
-    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex = True, sharey = True)
-    ax1.plot(vXaxis, lNewsImpactCurves[0], label = "d = 0, l = 2")
-    ax1.plot(vXaxis, lNewsImpactCurves[1], label = "d = 0, l = 5")
-    ax1.plot(vXaxis, lNewsImpactCurves[2], label = "d = 0, l = 10")
-    ax1.plot(vXaxis, lNewsImpactCurves[3], label = "d = 0, l = 50")
-    ax1.set_ylim([0,20])
-    ax1.tick_params('x', labelbottom=False)
-    ax1.set_ylabel("Sigma2_t+1")
-    ax1.legend()
-    ax2.plot(vXaxis, lNewsImpactCurves[4], label = "d = 0.1, l = 2")
-    ax2.plot(vXaxis, lNewsImpactCurves[5], label = "d = 0.1, l = 5")
-    ax2.plot(vXaxis, lNewsImpactCurves[6], label = "d = 0.1, l = 10")
-    ax2.plot(vXaxis, lNewsImpactCurves[7], label = "d = 0.1, l = 50")
-    ax2.set_ylim([0,20])
-    ax2.tick_params(
-        axis = 'x',
-        labelbottom=False)
-    ax2.tick_params(
-        axis = 'y',
-        labelleft=False)
-    ax2.legend()
-    ax3.plot(vXaxis, lNewsImpactCurves[8], label = "d = 0.2, l = 2")
-    ax3.plot(vXaxis, lNewsImpactCurves[9], label = "d = 0.2, l = 5")
-    ax3.plot(vXaxis, lNewsImpactCurves[10], label = "d = 0.2, l = 10")
-    ax3.plot(vXaxis, lNewsImpactCurves[11], label = "d = 0.2, l = 50")
-    ax3.set_ylim([0,20])
-    ax3.set_xlabel("Xt")
-    ax3.set_ylabel("Sigma2_t+1")
-    ax3.legend()
-    ax4.plot(vXaxis, lNewsImpactCurves[12], label = "d = 0.4, l = 2")
-    ax4.plot(vXaxis, lNewsImpactCurves[13], label = "d = 0.4, l = 5")
-    ax4.plot(vXaxis, lNewsImpactCurves[14], label = "d = 0.4, l = 10")
-    ax4.plot(vXaxis, lNewsImpactCurves[15], label = "d = 0.4, l = 50")
-    ax4.set_ylim([0,20])
-    ax4.set_xlabel("Xt")
-    ax4.legend()
-    plt.tight_layout()
-    plt.show()
-    
-    return
-
     Returns
     -------
     None.
@@ -272,11 +188,9 @@ def output_Q2():
 ### main
 def main():
     # magic numbers
-    path = r"data_ass_2.csv"
+    path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
     df_test, df_real = loadin_data(path)
-    output_Q1(df_real)
-    output_Q2()
-
+    
     # now call the functions that print all of the output for all questions
     output_Q1(df_real)
     
