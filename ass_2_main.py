@@ -92,18 +92,8 @@ def output_Q1(df):
     # print('')
     
     return
-
 ###########################################################
-### output_Q4
-def output_Q4(df, estimates):
-    """
-    Function that prints all the plots for question 4.
-
-    Parameters
-    ----------
-    df : dataframe of returns, used for getting estimated volatilities
-    estimates : output of parameter estimates from question 3
-
+### output_Q2
 def output_Q2():
     """Produces output for question 2."""
     print("Question 2: ")
@@ -188,6 +178,17 @@ def output_Q2():
     
     return
 
+###########################################################
+### output_Q4
+def output_Q4(df, estimates):
+    """
+    Function that prints all the plots for question 4.
+
+    Parameters
+    ----------
+    df : dataframe of returns, used for getting estimated volatilities
+    estimates : output of parameter estimates from question 3
+    
     Returns
     -------
     None.
