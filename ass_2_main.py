@@ -230,6 +230,8 @@ def output_Q5(df, estimates):
         x_t = mu + sigmat*epst
         return x_t
         
+    numbers = np.empty((6,9))
+    
     
     for i in range(3):
         mu = estimates[i, 0]
@@ -278,28 +280,40 @@ def output_Q5(df, estimates):
         xt_h5_nolev = (np.apply_along_axis(np.product, 1, (sims_xt_nolev[:,1:6]+1))) -1
         xt_h20_nolev = (np.apply_along_axis(np.product, 1, (sims_xt_nolev[:,1:21]+1))) -1
         
-        print('for series', df.columns[i].replace('_ret',''))
-        for q in [1,5,10]:
-            print('leveraged GARCH model: ')
-            print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_lev, q/100), np.quantile(xt_h5_lev, q/100), np.quantile(xt_h20_lev, q/100))
-            print('')
-            print('unleveraged GARCH model: ')
-            print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_nolev, q/100), np.quantile(xt_h5_nolev, q/100), np.quantile(xt_h20_nolev, q/100))
-            print('')
+        # print('for series', df.columns[i].replace('_ret','')) # this statement and loop print output for Q5
+        # for q in [1,5,10]:
+        #     print('leveraged GARCH model: ')
+        #     print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_lev, q/100), np.quantile(xt_h5_lev, q/100), np.quantile(xt_h20_lev, q/100))
+        #     print('')
+        #     print('unleveraged GARCH model: ')
+        #     print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_nolev, q/100), np.quantile(xt_h5_nolev, q/100), np.quantile(xt_h20_nolev, q/100))
+        #     print('')
+            
+        # store numbers into big object, then print as table...
+        numb = i*2
+        numbers[numb,:] = np.array([np.quantile(xt_h1_lev, 0.01), np.quantile(xt_h1_lev, 0.05), np.quantile(xt_h1_lev, 0.1),
+                                 np.quantile(xt_h5_lev, 0.01), np.quantile(xt_h5_lev, 0.05), np.quantile(xt_h5_lev, 0.1),
+                                 np.quantile(xt_h20_lev, 0.01), np.quantile(xt_h20_lev, 0.05), np.quantile(xt_h20_lev, 0.1)])
+        numbers[numb+1,:] = np.array([np.quantile(xt_h1_nolev, 0.01), np.quantile(xt_h1_nolev, 0.05), np.quantile(xt_h1_nolev, 0.1),
+                                 np.quantile(xt_h5_nolev, 0.01), np.quantile(xt_h5_nolev, 0.05), np.quantile(xt_h5_nolev, 0.1),
+                                 np.quantile(xt_h20_nolev, 0.01), np.quantile(xt_h20_nolev, 0.05), np.quantile(xt_h20_nolev, 0.1)])
+        
+    # this block of code prints a latex table for Q5
+    print(' & & h=1 & & & h=5 & & & h=20 & & \\\ ')
+    print(' & & q=0.01 & q=0.05 & q=0.10 & q=0.01 & q=0.05 & q=0.10 & q=0.01 & q=0.05 & q=0.10 \\Bstrut \\\ ')
+    print(' \\midrule ')
+    print(df.columns[0].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[0,:].round(decimals=4)]), '\\Tstrut \\\ ')
+    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[1,:].round(decimals=4)]), '\\\ ')
+    print('&&&&&&&&&& \\\ ')
+    print(df.columns[1].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[2,:].round(decimals=4)]), '\\\ ')
+    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[3,:].round(decimals=4)]), '\\\ ')
+    print('&&&&&&&&&& \\\ ')
+    print(df.columns[2].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[4,:].round(decimals=4)]), '\\\ ')
+    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[5,:].round(decimals=4)]), '\\\ ')
 
     return
 
 
-#%%
-path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
-df_test, df_real = loadin_data(path)
-
-estimates = np.array([[0.0, 0.0, 0.9, 0.1, 0.1, 5, 0.0003],
-                      [0.0, 0.0, 0.9, 0.1, 0.1, 5, 0.0003],
-                      [0.0, 0.0, 0.9, 0.1, 0.1, 5, 0.0003]])
-
-output_Q5(df_test, estimates)
-#%%
 ###########################################################
 ### main
 def main():
