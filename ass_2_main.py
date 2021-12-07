@@ -6,7 +6,10 @@ Assignment 1 main
 Created on Mon Nov 29 16:00:04 2021
 
 @author: Donald Hagestein, Connor Stevens and Maurits van den Oever
-#tryout
+
+potential wrong things:
+    - eps is too large bc i need to take the sq root of sigma^2
+    - check the NIC's...
 """
 
 
@@ -559,6 +562,7 @@ def output_Q4(df, estimates):
     None.
 
     """  
+    df *= 100
     series = df.columns
     # to do:
         # get vola's for all series...
@@ -666,6 +670,7 @@ def output_Q5(df, estimates):
     # then get 1%, 5%, and 10%
     
     # magic numbers:
+    df *=100
     simsize = 100
     
     
@@ -733,13 +738,16 @@ def output_Q5(df, estimates):
         sims_xt_nolev = np.full((simsize, 21), xt_init)
         
         for n in range(simsize):
-            eps = np.random.standard_t(Lambda, size=(21,))
+            eps = np.random.standard_t(Lambda, size=(21,)) # perhaps simulated wrong...
             for j in range(1,21):
                 sims_sigma_lev[n,j] = sigma_t(sims_xt_lev[n,j-1], mu_lev, omega_lev, beta_lev, alpha_lev, delta_lev, Lambda_lev, sims_sigma_lev[n, j-1], True)
                 sims_sigma_nolev[n,j] = sigma_t(sims_xt_nolev[n,j-1], mu, omega, beta, alpha, delta, Lambda, sims_sigma_lev[n, j-1], False)
                 sims_xt_lev[n,j] = mu + sims_sigma_lev[n,j]*eps[j]
                 sims_xt_lev[n,j] = mu + sims_sigma_nolev[n,j]*eps[j]
-            
+        
+        sims_xt_lev *= (1/100)    
+        sims_xt_nolev *= (1/100)    
+        
         xt_h1_lev = sims_xt_lev[:,1]
         xt_h5_lev = (np.apply_along_axis(np.product, 1, (sims_xt_lev[:,1:6]+1))) -1
         xt_h20_lev = (np.apply_along_axis(np.product, 1, (sims_xt_lev[:,1:21]+1))) -1
@@ -788,7 +796,7 @@ df_test, df_real = loadin_data(path)
 df = df_test
 
 estimates = output_Q3(df)
-output_Q4(df*100, estimates)
+output_Q4(df, estimates)
 output_Q5(df, estimates)
 
 #%%
