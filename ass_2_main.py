@@ -8,8 +8,8 @@ Created on Mon Nov 29 16:00:04 2021
 @author: Donald Hagestein, Connor Stevens and Maurits van den Oever
 
 potential wrong things:
-    - eps is too large bc i need to take the sq root of sigma^2
-    - check the NIC's...
+    - give titles to plots for Q4
+    - chill out tonight...
 """
 
 
@@ -561,7 +561,7 @@ def output_Q4(df, estimates):
     None.
 
     """  
-    df *= 100
+    df = df*100
     series = df.columns
     # to do:
         # get vola's for all series...
@@ -628,6 +628,7 @@ def output_Q4(df, estimates):
         ax[i, 0].set_xlabel('xt')
         ax[i, 0].set_ylabel('sigma2_t+1')
         ax[i, 0].legend(['leverage','no leverage'])
+        ax[i, 0].set_title('NIC for ' + df.columns[i].replace('_ret', ''))
         # ax labels, legend
         
         # title, axlabels, whatevs
@@ -636,6 +637,7 @@ def output_Q4(df, estimates):
         ax[i, 1].axvline(pd.Timestamp('2009-12-10'), color='black', linestyle='--', linewidth=1)
         ax[i, 1].set_xlabel('sigma2')
         ax[i, 1].legend(['leverage', 'no leverage'])
+        ax[i, 1].set_title('Estimated and forecasted volatilities for ' + df.columns[i].replace('_ret', ''))
 
         
         
@@ -669,8 +671,8 @@ def output_Q5(df, estimates):
     # then get 1%, 5%, and 10%
     
     # magic numbers:
-    df *=100
-    simsize = 100
+    df = df*100
+    simsize = 10000
     
     
     def sigma_t(xlag1, mu, omega, beta, alpha, delta, Lambda, sigmalag1, lev):
@@ -755,14 +757,14 @@ def output_Q5(df, estimates):
         xt_h5_nolev = (np.apply_along_axis(np.product, 1, (sims_xt_nolev[:,1:6]+1))) -1
         xt_h20_nolev = (np.apply_along_axis(np.product, 1, (sims_xt_nolev[:,1:21]+1))) -1
         
-        # print('for series', df.columns[i].replace('_ret','')) # this statement and loop print output for Q5
-        # for q in [1,5,10]:
-        #     print('leveraged GARCH model: ')
-        #     print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_lev, q/100), np.quantile(xt_h5_lev, q/100), np.quantile(xt_h20_lev, q/100))
-        #     print('')
-        #     print('unleveraged GARCH model: ')
-        #     print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_nolev, q/100), np.quantile(xt_h5_nolev, q/100), np.quantile(xt_h20_nolev, q/100))
-        #     print('')
+        print('for series', df.columns[i].replace('_ret','')) # this statement and loop print output for Q5
+        for q in [1,5,10]:
+            print('leveraged GARCH model: ')
+            print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_lev, q/100), np.quantile(xt_h5_lev, q/100), np.quantile(xt_h20_lev, q/100))
+            print('')
+            print('unleveraged GARCH model: ')
+            print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_nolev, q/100), np.quantile(xt_h5_nolev, q/100), np.quantile(xt_h20_nolev, q/100))
+            print('')
             
         # store numbers into big object, then print as table...
         numb = i*2
@@ -774,17 +776,17 @@ def output_Q5(df, estimates):
                                  np.quantile(xt_h20_nolev, 0.01), np.quantile(xt_h20_nolev, 0.05), np.quantile(xt_h20_nolev, 0.1)])
         
     # this block of code prints a latex table for Q5
-    print(' & & h=1 & & & h=5 & & & h=20 & & \\\ ')
-    print(' & & q=0.01 & q=0.05 & q=0.10 & q=0.01 & q=0.05 & q=0.10 & q=0.01 & q=0.05 & q=0.10 \\Bstrut \\\ ')
-    print(' \\midrule ')
-    print(df.columns[0].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[0,:].round(decimals=4)]), '\\Tstrut \\\ ')
-    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[1,:].round(decimals=4)]), '\\\ ')
-    print('&&&&&&&&&& \\\ ')
-    print(df.columns[1].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[2,:].round(decimals=4)]), '\\\ ')
-    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[3,:].round(decimals=4)]), '\\\ ')
-    print('&&&&&&&&&& \\\ ')
-    print(df.columns[2].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[4,:].round(decimals=4)]), '\\\ ')
-    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[5,:].round(decimals=4)]), '\\\ ')
+    # print(' & & h=1 & & & h=5 & & & h=20 & & \\\ ')
+    # print(' & & q=0.01 & q=0.05 & q=0.10 & q=0.01 & q=0.05 & q=0.10 & q=0.01 & q=0.05 & q=0.10 \\Bstrut \\\ ')
+    # print(' \\midrule ')
+    # print(df.columns[0].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[0,:].round(decimals=4)]), '\\Tstrut \\\ ')
+    # print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[1,:].round(decimals=4)]), '\\\ ')
+    # print('&&&&&&&&&& \\\ ')
+    # print(df.columns[1].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[2,:].round(decimals=4)]), '\\\ ')
+    # print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[3,:].round(decimals=4)]), '\\\ ')
+    # print('&&&&&&&&&& \\\ ')
+    # print(df.columns[2].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[4,:].round(decimals=4)]), '\\\ ')
+    # print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[5,:].round(decimals=4)]), '\\\ ')
 
     return
 
@@ -792,11 +794,10 @@ def output_Q5(df, estimates):
 # magic numbers
 path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
 df_test, df_real = loadin_data(path)
-df = df_test
-estimates = output_Q3(df)
+estimates = output_Q3(df_real)
 
-output_Q4(df, estimates)
-output_Q5(df, estimates)
+output_Q4(df_real, estimates)
+output_Q5(df_real, estimates)
 
 #%%
 ###########################################################
@@ -810,8 +811,9 @@ def main():
     output_Q1(df_real)
     output_Q2()
     
-    #estimates = output_Q3(df)
-    #output_Q4(df_test, estimates)
+    estimates = output_Q3(df_real)
+    output_Q4(df_real, estimates)
+    output_Q5(df_real, estimates)
     
 ###########################################################
 ### start main
