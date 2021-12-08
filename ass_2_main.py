@@ -790,16 +790,6 @@ def output_Q5(df, estimates):
 
     return
 
-#%%
-# magic numbers
-path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
-df_test, df_real = loadin_data(path)
-estimates = output_Q3(df_real)
-
-output_Q4(df_real, estimates)
-output_Q5(df_real, estimates)
-
-#%%
 ###########################################################
 ### main
 def main():
