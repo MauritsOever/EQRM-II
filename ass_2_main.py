@@ -561,6 +561,9 @@ def output_Q4(df, estimates):
     None.
 
     """  
+    print('Question 4: ')
+    print('')
+    print('Plots: ')
     df = df*100
     series = df.columns
     # to do:
@@ -674,6 +677,8 @@ def output_Q5(df, estimates):
     df = df*100
     simsize = 10000
     
+    print('Question 5: ')
+    print('')
     
     def sigma_t(xlag1, mu, omega, beta, alpha, delta, Lambda, sigmalag1, lev):
         # calculates the next sigma based on the xt and params
@@ -795,7 +800,7 @@ def output_Q5(df, estimates):
 def main():
     # magic numbers
     path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
-    df_test, df_real = loadin_data(path)
+    _, df_real = loadin_data(path)
 
     # now call the functions that print all of the output for all questions
     output_Q1(df_real)
