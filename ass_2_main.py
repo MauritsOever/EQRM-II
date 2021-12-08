@@ -541,7 +541,6 @@ def output_Q3(data):
     writer = pd.ExcelWriter(r'C:\Users\gebruiker\Documents\GitHub\EQRM-II\iets.xlsx', engine='xlsxwriter')
     df.to_excel(writer, sheet_name='Sheet1')
     writer.save()
-    print('hey it actually worked')
     
     return table
 
@@ -616,7 +615,7 @@ def output_Q4(df, estimates):
         # get range of xt...
         # get answers of sigmat+1 based on this xt, for lev and no lev
         # plot then
-        rangext = np.linspace(-0.05, 0.05, 1000)
+        rangext = np.linspace(-50, 50, 1000)
         NIC_lev = np.empty((len(rangext),))
         NIC_nolev = np.empty((len(rangext),))
         for t in range(len(rangext)):
@@ -691,7 +690,7 @@ def output_Q5(df, estimates):
         return sigma_t
     
     def x_t(sigmat, epst, mu):
-        x_t = mu + sigmat*epst
+        x_t = mu + np.sqrt(sigmat)*epst
         return x_t
         
     numbers = np.empty((6,9))
@@ -738,12 +737,12 @@ def output_Q5(df, estimates):
         sims_xt_nolev = np.full((simsize, 21), xt_init)
         
         for n in range(simsize):
-            eps = np.random.standard_t(Lambda, size=(21,)) # perhaps simulated wrong...
+            eps = sc.t.rvs(Lambda, 0, 1, 21) # perhaps simulated wrong...
             for j in range(1,21):
                 sims_sigma_lev[n,j] = sigma_t(sims_xt_lev[n,j-1], mu_lev, omega_lev, beta_lev, alpha_lev, delta_lev, Lambda_lev, sims_sigma_lev[n, j-1], True)
                 sims_sigma_nolev[n,j] = sigma_t(sims_xt_nolev[n,j-1], mu, omega, beta, alpha, delta, Lambda, sims_sigma_lev[n, j-1], False)
-                sims_xt_lev[n,j] = mu + sims_sigma_lev[n,j]*eps[j]
-                sims_xt_lev[n,j] = mu + sims_sigma_nolev[n,j]*eps[j]
+                sims_xt_lev[n,j] = mu + np.sqrt(sims_sigma_lev[n,j])*eps[j]
+                sims_xt_nolev[n,j] = mu + np.sqrt(sims_sigma_nolev[n,j])*eps[j]
         
         sims_xt_lev *= (1/100)    
         sims_xt_nolev *= (1/100)    
@@ -794,8 +793,8 @@ def output_Q5(df, estimates):
 path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
 df_test, df_real = loadin_data(path)
 df = df_test
-
 estimates = output_Q3(df)
+
 output_Q4(df, estimates)
 output_Q5(df, estimates)
 
