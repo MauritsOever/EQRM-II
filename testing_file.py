@@ -90,44 +90,35 @@ def Parametrize(vTheta):
     #Model specification 1.
     if len(vTheta) == 3:
         #Save as array for easy combining later.
-        vA_parametrized = [np.array((1 + np.exp(-vTheta[2]))**-1)]
+        vA_parameters = [np.array((1 + np.exp(-vTheta[2]))**-1)]
 
     #Model specification 2.
     if len(vTheta) == 5:
         #Save as array for easy combining later.
-        vA_parametrized = np.array((1 + np.exp(-vTheta[2:]))**-1)
+        vA_parameters = np.array((1 + np.exp(-vTheta[2:]))**-1)
     
     #Model specification 3.
     if len(vTheta) == 8:
         
-        #Mask 
+        #Masks for indices of diagonal and off-diagonal elements in flattened
+        #array version of A-matrix.
         vDaig_mask = np.array([0, 2, 5])
         vOff_diag_mask = np.array([1, 3, 4])
 
-        #Set values at indices of vMatrix_mask equal to the vTheta[2:] values,
-        #so we are left with an upper triangular matrix.
+        #Different treatment for diagonal and off-diagonal elements of A-matrix.
         vA_subparameters = vTheta[2:]
-        vA_parameters = np.full_like(vTheta[2:], fill_value = np.inf)
 
+        #Inf used to highlight errors in the indexing.
+        vA_parameters = np.full_like(vTheta[2:], fill_value = np.inf)
+        
+        #Diagonal treatment.
         vA_parameters[vDaig_mask] = (1 + np.exp(-vA_subparameters[vDaig_mask]))**-1
 
+        #Off-diagonal treatment.
         vA_parameters[vOff_diag_mask] = 1/3 * (-1 + 2 / (1 + np.exp(-vA_subparameters[vOff_diag_mask])))
 
-
-        # #Loop through flattened matrix to parametrize values.
-        # for iCount, dMatrix_value in enumerate(vA_parametrized):
-        #     #For diagonal elements.
-        #     if (iCount == 0 or iCount == 4 or iCount == 8):
-        #         vA_parametrized[iCount] = (1 + np.exp(-dMatrix_value))**-1
-
-        #     #For off-diagonal elements.
-        #     else:
-        #         vA_parametrized[iCount] = 1/3 * (-1 + 2 / (1 + np.exp(-dMatrix_value)))
-    
-    # #Put everything back together in the same format it was input.
-    # vTrue_parameters = np.concatenate(([dBeta], [dLambda], vA_parametrized))
-
-    vParams_parametrized = np.insert(vA_parameters, 0, [dBeta, dLambda])#.reshape(iRows, 1)
+    #Return parameters in the order and form they were provided.
+    vParams_parametrized = np.insert(vA_parameters, 0, [dBeta, dLambda])
     
     return vParams_parametrized
 
@@ -162,15 +153,21 @@ def Log_likelihood_function(vTheta, mXtilde, iK, iN, mOmega, mSigma_starting):
         dBeta = vTheta_new[0]
         dLambda = vTheta_new[1]
 
-        vA_flat = np.full(9, fill_value = np.inf)
+        #Vector for holding flattened A-matrix.
+        vA_flat = np.zeros(9)
 
-        vIndex_insert_before = [0, 4, 6, 9, 11, 13]
+        #Index mask for positions of lower-triangular elements.
+        vIndex_mask = [0, 3, 4, 6, 7, 8]
 
-        vA_flat = vTheta_new[2:]
+        #Values to be put in lower triangular matrix extracted from vTheta.
+        vA_lower_triangular = vTheta_new[2:]
 
-        #Pre-specified lower-trinagular A-matrix.
+        #Places values from vA_lower_triangular into positions in vIndex_mask.
+        for iCount in range(0, len(vA_lower_triangular)):
+            vA_flat[vIndex_mask[iCount]] = vA_lower_triangular[iCount]
+
+        #Reshape pre-specified lower-trinagular A-matrix.
         mA = vA_flat.reshape(3,3)
-        #print(mA)
 
     #Empty list to be filled with each of the 2500 covariance matrices.
     lSigmas = []
@@ -357,7 +354,7 @@ def hessian_2sided(fun, vP, *args):
 ### Standard_errors(vTheta_star) = mCov
 def Standard_errors(vTheta_star):
         
-        #Define objective function.
+        #Define objective function for Hessian.
         dAve_log_likelihood = lambda vTheta: np.mean(Log_likelihood_function(
             vTheta,
             mXtilde,
@@ -366,6 +363,7 @@ def Standard_errors(vTheta_star):
             mOmega,
             mSigma_starting))
         
+        #Define objective function for Jacobian.
         vLog_likelihood = lambda vTheta: Log_likelihood_function(
             vTheta,
             mXtilde,
@@ -374,6 +372,7 @@ def Standard_errors(vTheta_star):
             mOmega,
             mSigma_starting)
 
+        #Define objective function for Jacobian for delta method.
         vParametrized_params = lambda vTheta: Parametrize(vTheta)
 
         
@@ -404,10 +403,8 @@ def Standard_errors(vTheta_star):
         mG = np.dot(mG, mCov)
         mCov = np.dot(mCov, mG) / iN
 
-        #Standard errors
+        ##Standard errors via delta method.
         mJ = jacobian_2sided(Parametrize, vTheta_star)
-
-        print(mJ.shape)
         mTrue_cov = mJ @ mCov @ mJ.T
         vTrue_se = np.sqrt(np.diagonal(mTrue_cov))
 
@@ -536,30 +533,24 @@ def Model3(dBeta_starting, dLambda_starting, vA_starting):
 
     print("\nOptimization results:")
     print(res)
-
-    #Transform parameters back.
-    dBeta_test = (1 + np.exp(-res.x[0]))**-1
-    dLambda_test = np.exp(res.x[1])
-
+ 
     vTrue_params = Parametrize(res.x)
 
     dBeta_result = vTrue_params[0]
     dLambda_result = vTrue_params[1]
     vA_lower_triangular = vTrue_params[2:]
 
-    mA_result = vA_flattened.reshape(3,3)
+    print("\ndLambda: " + str(dLambda_result))
+    print("\ndBeta: " + str(dBeta_result))
+    print("\nmA: \n" + str(vA_lower_triangular))
 
     vTheta_star = res.x
 
     #Calculate covariance matrix and standard errors.
-    vTrue_se = Covariance_matrix(vTheta_star)
+    vTrue_se = Standard_errors(vTheta_star)
 
     #print("mCov: \n" + str(mCov) + "\n")
     print("\nStandar errors: \n" + str(vTrue_se))
-
-    print("\ndLambda: " + str(dLambda_result))
-    print("\ndBeta: " + str(dBeta_result))
-    print("\nmA: \n" + str(mA_result))
 
     print("\nEnd of model specification 3.")
 
