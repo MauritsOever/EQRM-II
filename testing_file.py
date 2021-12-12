@@ -371,10 +371,6 @@ def Standard_errors(vTheta_star):
             iN,
             mOmega,
             mSigma_starting)
-
-        #Define objective function for Jacobian for delta method.
-        vParametrized_params = lambda vTheta: Parametrize(vTheta)
-
         
         # mH= -hessian_2sided(dAve_log_likelihood, vTheta_star)
         # mG = jacobian_2sided(vLog_likelihood, vTheta_star)
@@ -393,8 +389,6 @@ def Standard_errors(vTheta_star):
 
         #Force symmetricality.
         mCov = (mCov +  mCov.T)/2
-
-        print("\nCovariance matrix: \n" + str(mCov))
 
         # compute the outer product of gradients of the average log likelihood
         mG = jacobian_2sided(vLog_likelihood, vTheta_star)
@@ -442,6 +436,7 @@ def Model1(dBeta_starting, dLambda_starting, dA_starting):
     dLambda_result = np.exp(res.x[1])
     dA11_result = (1 + np.exp(-res.x[2]))**-1
 
+    print("\nLog-Likelihood: " + str(res.fun * 2500))
     print("\ndLambda: " + str(dLambda_result))
     print("\ndBeta: " + str(dBeta_result))
     print("\nmA: " + str(dA11_result))
@@ -491,6 +486,7 @@ def Model2(dBeta_starting, dLambda_starting, vA_starting):
     dLambda_result = np.exp(res.x[1])
     mA_result = np.diag((1 + np.exp(-res.x[2:]))**-1)
 
+    print("\nLog-Likelihood: " + str(res.fun * 2500))
     print("\ndLambda: " + str(dLambda_result))
     print("\ndBeta: " + str(dBeta_result))
     print("\nmA: \n" + str(mA_result))
@@ -540,9 +536,24 @@ def Model3(dBeta_starting, dLambda_starting, vA_starting):
     dLambda_result = vTrue_params[1]
     vA_lower_triangular = vTrue_params[2:]
 
+    #Vector for holding flattened A-matrix.
+    vA_flat = np.zeros(9)
+
+    #Index mask for positions of lower-triangular elements.
+    vIndex_mask = [0, 3, 4, 6, 7, 8]
+
+    #Places values from vA_lower_triangular into positions in vIndex_mask.
+    for iCount in range(0, len(vA_lower_triangular)):
+        vA_flat[vIndex_mask[iCount]] = vA_lower_triangular[iCount]
+
+    #Reshape pre-specified lower-trinagular A-matrix.
+    mA = vA_flat.reshape(3,3)
+
+    print("\nLog-Likelihood: " + str(res.fun * 2500))
     print("\ndLambda: " + str(dLambda_result))
     print("\ndBeta: " + str(dBeta_result))
     print("\nmA: \n" + str(vA_lower_triangular))
+    print("\nmA: \n" + str(mA))
 
     vTheta_star = res.x
 
@@ -562,11 +573,11 @@ path = r"data_ass_2.csv"
 df_test, df_real = loadin_data(path)
 
 #Full dataset for calculating mOmega.
-mFull = np.array(df_test)
+mFull = np.array(df_real)
 mFull_de_mean = mFull - np.mean(mFull, axis = 0)
 
 #Use first 2500 observations.
-mSample = np.array(df_test.iloc[0: 2500, :], dtype=np.float64) * 100
+mSample = np.array(df_real.iloc[0: 2500, :], dtype=np.float64) * 100
 
 #De-mean each column.
 mXtilde = mSample - np.mean(mFull, axis = 0)
