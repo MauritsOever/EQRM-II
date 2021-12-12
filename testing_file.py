@@ -8,7 +8,9 @@ import scipy.stats as sc
 import datetime as dt
 from scipy.special import loggamma
 import scipy.optimize as opt
-
+import pandas as pd
+pd.options.display.float_format = '{:.6f}'.format
+np.set_printoptions(suppress=True)
 #Change runtime warnings to errors to catch in debugging.
 np.seterr(all='raise')
 
@@ -34,7 +36,7 @@ def loadin_data(path):
     return df_test, df_real
 
 ################################################################################
-### loadin_data
+### Sigma_tplus1_calculation(vX_t, dBeta, mOmega, mA, dLambda, mSigma_t) = mSigma_tplus1
 def Sigma_tplus1_calculation(vX_t, dBeta, mOmega, mA, dLambda, mSigma_t):
     #Force column vector.
     vX_t.shape = (3,1)
@@ -55,50 +57,53 @@ def Sigma_tplus1_calculation(vX_t, dBeta, mOmega, mA, dLambda, mSigma_t):
     return mSigma_tplus1
 
 ################################################################################
-###Function Log-likelihood.
+### Multivariate_t_log_likelihood(dLambda, iK, mSigma_t, vX_t) = dLog_likelihood
 def Multivariate_t_log_likelihood(dLambda, iK, mSigma_t, vX_t):
     #Force column vector.
     vX_t.shape = (3,1)
 
     # #Break up into terms for debugging.
-    dTerm1 = loggamma(1/2 * (dLambda + iK)) - loggamma(dLambda/2) 
-    dTerm2 = - 1/2 * np.log(np.linalg.det(np.pi * dLambda * mSigma_t))
-    dTerm3 = -1/2 * (dLambda + iK) * np.log(1 + dLambda**-1 * (vX_t.T @ np.linalg.inv(mSigma_t) @ vX_t))
+    # dTerm1 = loggamma(1/2 * (dLambda + iK)) - loggamma(dLambda/2) 
+    # dTerm2 = - 1/2 * np.log(np.linalg.det(np.pi * dLambda * mSigma_t))
+    # dTerm3 = -1/2 * (dLambda + iK) * np.log(1 + dLambda**-1 * (vX_t.T @ np.linalg.inv(mSigma_t) @ vX_t))
 
     #Break up into terms for debugging.
-    # dTerm1 = loggamma(1/2 * (dLambda + iK))
-    # dTerm2 = -loggamma(dLambda/2)
-    # dTerm3 = -iK/2 * np.log(dLambda * np.pi)
-    # dTerm4 = -1/2 * np.log(np.linalg.det(mSigma_t))
-    # dTerm5 = -1/2 * (dLambda + iK) * np.log(1 + dLambda**-1 * (vX_t.T @ np.linalg.inv(mSigma_t) @ vX_t))
+    dTerm1 = loggamma(1/2 * (dLambda + iK))
+    dTerm2 = -loggamma(dLambda/2)
+    dTerm3 = -iK/2 * np.log(dLambda * np.pi)
+    dTerm4 = -1/2 * np.log(np.linalg.det(mSigma_t))
+    dTerm5 = -1/2 * (dLambda + iK) * np.log(1 + dLambda**-1 * (vX_t.T @ np.linalg.inv(mSigma_t) @ vX_t))
 
     #Sum for final log-likelihood contribution.
-    dLog_likelihood = dTerm1 + dTerm2 + dTerm3 #+ dTerm4 + dTerm5
+    dLog_likelihood = dTerm1 + dTerm2 + dTerm3 + dTerm4 + dTerm5
 
     return dLog_likelihood
 
 ################################################################################
-###Parametrize(vTheta, sFrom_to, dModel) = vTrue_parameters = [dBeta, dLambda, vA]
-def Parametrize(vTheta, iModel):
+### Parametrize(vTheta, sFrom_to, dModel) = vTrue_parameters = [dBeta, dLambda, vA]
+def Parametrize(vTheta):
 
     #Save as array for easy combining later.
     dBeta = (1 + np.exp(-vTheta[0]))**-1
     dLambda = np.exp(vTheta[1])
 
     #Model specification 1.
-    if iModel == 1:
+    if len(vTheta) == 3:
+        iRows = 3
         #Save as array for easy combining later.
         vA_parametrized = [np.array((1 + np.exp(-vTheta[2]))**-1)]
 
     #Model specification 2.
-    if iModel == 2:
+    if len(vTheta) == 5:
+        iRows = 5
         #Save as array for easy combining later.
         vA_parametrized = np.array((1 + np.exp(-vTheta[2:]))**-1)
     
     #Model specification 3.
-    if iModel == 3:
+    if len(vTheta) == 8:
+        iRows = 8
         #Create array of zeros to hold falttened A matrix.
-        vA_parametrized = np.zeros(9)
+        vA_parametrized = np.zeros(8)
         
         #Mask for which indices of which values in flattened A matrix to be 
         #replaced with values in vTheta.
@@ -120,31 +125,44 @@ def Parametrize(vTheta, iModel):
     
     # #Put everything back together in the same format it was input.
     # vTrue_parameters = np.concatenate(([dBeta], [dLambda], vA_parametrized))
+
+    vParams_parametrized = np.insert(vA_parametrized, 0, [dBeta, dLambda])#.reshape(iRows, 1)
     
-    return dBeta, dLambda, vA_parametrized
+    return vParams_parametrized
 
 ################################################################################
-###Log_likelihood_function(vTheta, mXtilde, iK, iN, mOmega, mSigma_starting, iModel)
-def Log_likelihood_function(vTheta, mXtilde, iK, iN, mOmega, mSigma_starting, iModel):
+###Log_likelihood_function(
+# vTheta, mXtilde, iK, iN, mOmega, mSigma_starting) = vLog_likelihood_contributions
+def Log_likelihood_function(vTheta, mXtilde, iK, iN, mOmega, mSigma_starting):
 
-    if iModel == 1:
+    if len(vTheta) == 3:
         #Re-parametrized  model parameters prior to optimisation.
-        (dBeta, dLambda, dA11) = Parametrize(vTheta, iModel = 1)
+        vTheta_new = Parametrize(vTheta)
+        dBeta = vTheta_new[0]
+        dLambda = vTheta_new[1]
+        dA11 = vTheta_new[2]
 
         #Pre-specified A-matrix A11 * I.
         mA = dA11 * np.identity(3)
     
-    if iModel == 2:
+    if len(vTheta) == 5:
         #Re-parametrized  model parameters prior to optimisation.
-        (dBeta, dLambda, vA_flat) = Parametrize(vTheta, iModel = 2)
+        vTheta_new = Parametrize(vTheta)
+        dBeta = vTheta_new[0]
+        dLambda = vTheta_new[1]
+        vA_flat = vTheta_new[2:]
         
         #Pre-specified diagonal A-matrix.
         mA = np.diagflat(vA_flat)
 
-    if iModel == 3:
+    if len(vTheta) == 8:
         #Re-parametrized  model parameters prior to optimisation.
-        (dBeta, dLambda, vA_flat) = Parametrize(vTheta, iModel = 3)
+        vTheta_new = Parametrize(vTheta)
+        dBeta = vTheta_new[0]
+        dLambda = vTheta_new[1]
+        vA_flat = vTheta_new[2:]
 
+        #Pre-specified lower-trinagular A-matrix.
         mA = vA_flat.reshape(3,3)
         #print(mA)
 
@@ -180,13 +198,229 @@ def Log_likelihood_function(vTheta, mXtilde, iK, iN, mOmega, mSigma_starting, iM
     return vLog_likelihood_contributions
 
 ################################################################################
-###def Model1(dBeta_starting, dLambda_starting, dA_starting, iModel)
-def Model1(dBeta_starting, dLambda_starting, dA_starting, iModel):
+### vh= _gh_stepsize(vP)
+def _gh_stepsize(vP):
+    """
+    Purpose:
+        Calculate stepsize close (but not too close) to machine precision
+        
+    Inputs:
+        vP      1D array of parameters
+        
+    Return value:
+        vh      1D array of step sizes
+    """
+    
+    vh = 1e-8*(np.fabs(vP)+1e-8)   # Find stepsize
+    vh = np.maximum(vh, 5e-6)      # Don't go too small
+    
+    return vh
+
+################################################################################
+### vG= gradient_2sided(fun, vP, *args)
+def gradient_2sided(fun, vP, *args):
+    """
+    Purpose:
+        Compute numerical gradient, using a 2-sided numerical difference
+        Author:Charles Bos, following Kevin Sheppard's hessian_2sided, with
+        ideas/constants from Jurgen Doornik's Num1Derivative
+        
+    Inputs:
+        fun     function, as used for minimize()
+        vP      1D array of size iP of optimal parameters
+        args    (optional) extra arguments
+    
+    Return value:
+        vG      iP vector with gradient
+        
+    See also:
+        scipy.optimize.approx_fprime, for forward difference
+    """
+    
+    iP   =  np.size(vP)
+    vP   =  vP.reshape(iP)      # Ensure vP is 1D-array
+    
+    #  f  = fun(vP, *args)      # central function value is not needed
+    vh= _gh_stepsize(vP)
+    mh   =  np.diag(vh)         # Build a  diagonal matrix out of h
+    
+    fp = np.zeros(iP)
+    fm = np.zeros(iP)
+    for i in range(iP):         # Find f(x+h), f(x-h)
+        fp[i] =  fun(vP+mh[i], *args)
+        fm[i] =  fun(vP-mh[i], *args)
+        
+    vhr = (vP +  vh) - vP       # Check for effective stepsize right
+    vhl = vP - (vP - vh)        # Check for effective stepsize left
+    vG= (fp -  fm) /  (vhr +  vhl)  # Get central gradient
+    
+    return vG
+
+################################################################################
+### mG= jacobian_2sided(fun, vP, *args)
+def jacobian_2sided(fun, vP, *args):
+    """
+    Purpose:
+        Compute numerical jacobian, using a 2-sided numerical difference
+        
+    Author:
+        Charles Bos, following Kevin Sheppard's hessian_2sided, with
+        ideas/constants from Jurgen Doornik's Num1Derivative
+        
+    Inputs:
+        fun     function, return 1D array of size iN
+        vP      1D array of size iP of optimal parameters
+        args    (optional) extra arguments
+        
+    Return value:
+        mG      iN x  iP   matrix with jacobian
+        
+    See also:numdifftools.Jacobian(), for similar output
+    """
+    iP = np.size(vP)
+    vP = vP.reshape(iP)        # Ensure vP is 1D-array
+    vF = fun(vP, *args)        # evaluate function, only to get size
+    iN = vF.size
+    vh= _gh_stepsize(vP)
+    mh   =  np.diag(vh)        # Build a  diagonal matrix out of h
+    mGp = np.zeros((iN, iP))
+    mGm = np.zeros((iN, iP))
+    for i in   range(iP):     # Find f(x+h), f(x-h)
+        mGp[:,i] =  fun(vP+mh[i], *args)
+        mGm[:,i] =  fun(vP-mh[i], *args)
+    vhr = (vP +  vh) - vP    # Check for effective stepsize right
+    vhl = vP   -  (vP -  vh)    # Check for effective stepsize left
+    mG= (mGp -  mGm) / (vhr +  vhl)  # Get central jacobian
+    return mG
+
+################################################################################
+### mH= hessian_2sided(fun, vP, *args)
+def hessian_2sided(fun, vP, *args):
+    """
+    Purpose:
+        Compute numerical hessian, using a  2-sided numerical difference
+        
+    Author:Kevin Sheppard, adapted by Charles Bos
+    
+    Source:https://www.kevinsheppard.com/Python_for_Econometrics
+    
+    Inputs:
+        fun     function, as used for minimize()
+        vP      1D array of size iP of optimal parameters
+        args    (optional) extra arguments
+        
+    Return value:
+        mH      iP x  iP matrix with symmetric hessian
+    """
+    iP = np.size(vP,0)
+    vP= vP.reshape(iP)    # Ensure vP is 1D-array
+    f = fun(vP, *args)
+    vh= _gh_stepsize(vP)
+    vPh = vP + vh
+    vh = vPh - vP
+    
+    mh = np.diag(vh)      # Build a  diagonal matrix out of vh
+    
+    fp   =  np.zeros(iP)
+    fm   =  np.zeros(iP)
+    for i in range(iP):
+        fp[i] =  fun(vP+mh[i], *args)
+        fm[i] =  fun(vP-mh[i], *args)
+    
+    fpp = np.zeros((iP,iP))
+    fmm = np.zeros((iP,iP))
+    for i in   range(iP):
+        for j in   range(i,iP):
+            fpp[i,j] =  fun(vP +  mh[i] +  mh[j], *args)
+            fpp[j,i] =  fpp[i,j]
+            fmm[i,j] =  fun(vP -  mh[i] -  mh[j], *args)
+            fmm[j,i] =  fmm[i,j]
+            
+    vh   =  vh.reshape((iP,1))
+    mhh = vh   @  vh.T             # mhh= h  h', outer product of h-vector
+    
+    mH   =  np.zeros((iP,iP))
+    for i in range(iP):
+        for j in range(i,iP):
+            mH[i,j] =  (fpp[i,j] -  fp[i] - fp[j] +  f  +  f  - fm[i] -  fm[j] + fmm[i,j])/mhh[i,j]/2
+            mH[j,i] =  mH[i,j]
+            
+    return mH
+
+################################################################################
+### Standard_errors(vTheta_star) = mCov
+def Standard_errors(vTheta_star):
+        
+        #Define objective function.
+        dAve_log_likelihood = lambda vTheta: np.mean(Log_likelihood_function(
+            vTheta,
+            mXtilde,
+            iK,
+            iN,
+            mOmega,
+            mSigma_starting))
+        
+        vLog_likelihood = lambda vTheta: Log_likelihood_function(
+            vTheta,
+            mXtilde,
+            iK,
+            iN,
+            mOmega,
+            mSigma_starting)
+
+        vParametrized_params = lambda vTheta: Parametrize(vTheta)
+
+        
+        # mH= -hessian_2sided(dAve_log_likelihood, vTheta_star)
+        # mG = jacobian_2sided(vLog_likelihood, vTheta_star)
+        # mG2 = (mG.T @ mG) / iN
+        # mH_inv = np.linalg.inv(mH)
+        # mVhat = (mH_inv @ mG2 @ mH_inv) / iN
+        # vTheta_variance = mVhat
+
+        # mK = jacobian_2sided(vParametrized_params, vTheta_star)
+        # mTheta_true_variance = mK @ vTheta_variance @ mK.T
+        # vTrue_se = np.sqrt(np.diagonal(mTheta_true_variance))
+
+        #Calculate inverse hessian.
+        mH= -hessian_2sided(dAve_log_likelihood, vTheta_star)
+        mCov = np.linalg.inv(mH)
+
+        #Force symmetricality.
+        mCov = (mCov +  mCov.T)/2
+
+        print("\nCovariance matrix: \n" + str(mCov))
+
+        # compute the outer product of gradients of the average log likelihood
+        mG = jacobian_2sided(vLog_likelihood, vTheta_star)
+
+        mG = np.dot(mG.T, mG) / iN
+        mG = np.dot(mG, mCov)
+        mCov = np.dot(mCov, mG) / iN
+
+        #Standard errors
+        mJ = jacobian_2sided(Parametrize, vTheta_star)
+
+        print(mJ.shape)
+        mTrue_cov = mJ @ mCov @ mJ.T
+        vTrue_se = np.sqrt(np.diagonal(mTrue_cov))
+
+        return vTrue_se
+
+################################################################################
+### Model1(dBeta_starting, dLambda_starting, dA_starting) = Ouptut
+def Model1(dBeta_starting, dLambda_starting, dA_starting):
 
     print("\nOptimising model specification 1: A11 * I")
 
     #Define objective function.
-    dAve_log_likelihood = lambda vTheta: -np.mean(Log_likelihood_function(vTheta, mXtilde, iK, iN, mOmega, mSigma_starting, iModel))
+    dAve_log_likelihood = lambda vTheta: -np.mean(Log_likelihood_function(
+        vTheta,
+        mXtilde,
+        iK,
+        iN,
+        mOmega,
+        mSigma_starting))
 
     #Define starting values in parameter vector.
     vTheta_starting = np.array([dBeta_starting, dLambda_starting, dA_starting])
@@ -209,13 +443,22 @@ def Model1(dBeta_starting, dLambda_starting, dA_starting, iModel):
     print("\ndBeta: " + str(dBeta_result))
     print("\nmA: " + str(dA11_result))
 
+    vTheta_star = np.array([res.x[0], res.x[1], res.x[2]])
+
+    #Calculate covariance matrix and standard errors.
+    vTrue_se = Standard_errors(vTheta_star)
+
+    #print("mCov: \n" + str(mCov) + "\n")
+
+    print("\nStandar errors: \n" + str(vTrue_se))
+
     print("\nEnd of model specification 1.")
 
     return
 
 ################################################################################
-###def Model2(dBeta_starting, dLambda_starting, dA_starting, iModel)
-def Model2(dBeta_starting, dLambda_starting, vA_starting, iModel):
+###def Model2(dBeta_starting, dLambda_starting, dA_starting)
+def Model2(dBeta_starting, dLambda_starting, vA_starting):
 
     print("\nOptimising model specification 2: diag(A11, A22, A33)")
 
@@ -226,8 +469,7 @@ def Model2(dBeta_starting, dLambda_starting, vA_starting, iModel):
         iK,
         iN,
         mOmega,
-        mSigma_starting,
-        iModel))
+        mSigma_starting))
 
     #Define starting values in parameter vector.
     vTheta_starting = np.insert(vA_starting, 0, [dBeta_starting ,dLambda_starting])
@@ -250,18 +492,32 @@ def Model2(dBeta_starting, dLambda_starting, vA_starting, iModel):
     print("\ndBeta: " + str(dBeta_result))
     print("\nmA: \n" + str(mA_result))
 
+    #Optimal subparameters.
+    vTheta_star = res.x
+
+    #Calculate covariance matrix and standard errors.
+    vTrue_se = Standard_errors(vTheta_star)
+
+    print("\nStandar errors: \n" + str(vTrue_se))
+
     print("\nEnd of model specification 2.")
 
     return
 
 ################################################################################
-###def Model3(dBeta_starting, dLambda_starting, dA_starting, iModel)
-def Model3(dBeta_starting, dLambda_starting, vA_starting, iModel):
+###def Model3(dBeta_starting, dLambda_starting, dA_starting)
+def Model3(dBeta_starting, dLambda_starting, vA_starting):
 
     print("\nOptimising model specification 3: lower triangular(A11, A21, A22, A31, A32, A33)")
 
     #Define objective function.
-    dAve_log_likelihood = lambda vTheta: -np.mean(Log_likelihood_function(vTheta, mXtilde, iK, iN, mOmega, mSigma_starting, iModel))
+    dAve_log_likelihood = lambda vTheta: -np.mean(Log_likelihood_function(
+        vTheta,
+        mXtilde,
+        iK,
+        iN,
+        mOmega,
+        mSigma_starting))
 
     #Define starting values in parameter vector.
     vTheta_starting = np.insert(vA_starting, 0, [dBeta_starting ,dLambda_starting])
@@ -279,11 +535,21 @@ def Model3(dBeta_starting, dLambda_starting, vA_starting, iModel):
     dBeta_test = (1 + np.exp(-res.x[0]))**-1
     dLambda_test = np.exp(res.x[1])
 
-    (dBeta_result,
-    dLambda_result,
-    vA_flattened) = Parametrize(res.x, iModel)
+    vTrue_params = Parametrize(res.x)
+
+    dBeta_result = vTrue_params[0]
+    dLambda_result = vTrue_params[1]
+    vA_lower_triangular = vTrue_params[2:]
 
     mA_result = vA_flattened.reshape(3,3)
+
+    vTheta_star = res.x
+
+    #Calculate covariance matrix and standard errors.
+    vTrue_se = Covariance_matrix(vTheta_star)
+
+    #print("mCov: \n" + str(mCov) + "\n")
+    print("\nStandar errors: \n" + str(vTrue_se))
 
     print("\ndLambda: " + str(dLambda_result))
     print("\ndBeta: " + str(dBeta_result))
@@ -299,7 +565,7 @@ path = r"data_ass_2.csv"
 df_test, df_real = loadin_data(path)
 
 #Full dataset for calculating mOmega.
-mFull = np.array(df_test) * 100
+mFull = np.array(df_test)
 mFull_de_mean = mFull - np.mean(mFull, axis = 0)
 
 #Use first 2500 observations.
@@ -326,18 +592,15 @@ mSigma_starting = (((mXtilde[0:50, :].T@ mXtilde[0:50, :])
 
 ##First model specification.
 dA_starting = np.sqrt(0.02)
-iModel = 1
 
-Model1(dBeta_starting, dLambda_starting, dA_starting, iModel)
+#Model1(dBeta_starting, dLambda_starting, dA_starting)
 
 ##Second model specification.
 vA_starting = np.sqrt(np.array([0.02, 0.02, 0.02]))
-iModel = 2
 
-Model2(dBeta_starting, dLambda_starting, vA_starting, iModel)
+#Model2(dBeta_starting, dLambda_starting, vA_starting)
 
 ##Third model specification.
 vA_starting = np.sqrt(np.array([0.02, 0, 0.02, 0, 0, 0.02]))
-iModel = 3
 
-Model3(dBeta_starting, dLambda_starting, vA_starting, iModel)
+Model3(dBeta_starting, dLambda_starting, vA_starting)
