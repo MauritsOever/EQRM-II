@@ -89,44 +89,45 @@ def Parametrize(vTheta):
 
     #Model specification 1.
     if len(vTheta) == 3:
-        iRows = 3
         #Save as array for easy combining later.
         vA_parametrized = [np.array((1 + np.exp(-vTheta[2]))**-1)]
 
     #Model specification 2.
     if len(vTheta) == 5:
-        iRows = 5
         #Save as array for easy combining later.
         vA_parametrized = np.array((1 + np.exp(-vTheta[2:]))**-1)
     
     #Model specification 3.
     if len(vTheta) == 8:
-        iRows = 8
-        #Create array of zeros to hold falttened A matrix.
-        vA_parametrized = np.zeros(8)
         
-        #Mask for which indices of which values in flattened A matrix to be 
-        #replaced with values in vTheta.
-        vMatrix_mask = np.array([0, 3, 4, 6, 7, 8])
+        #Mask 
+        vDaig_mask = np.array([0, 2, 5])
+        vOff_diag_mask = np.array([1, 3, 4])
 
         #Set values at indices of vMatrix_mask equal to the vTheta[2:] values,
         #so we are left with an upper triangular matrix.
-        vA_parametrized[vMatrix_mask] = vTheta[2:]
+        vA_subparameters = vTheta[2:]
+        vA_parameters = np.full_like(vTheta[2:], fill_value = np.inf)
 
-        #Loop through flattened matrix to parametrize values.
-        for iCount, dMatrix_value in enumerate(vA_parametrized):
-            #For diagonal elements.
-            if (iCount == 0 or iCount == 4 or iCount == 8):
-                vA_parametrized[iCount] = (1 + np.exp(-dMatrix_value))**-1
+        vA_parameters[vDaig_mask] = (1 + np.exp(-vA_subparameters[vDaig_mask]))**-1
 
-            #For off-diagonal elements.
-            else:
-                vA_parametrized[iCount] = 1/3 * (-1 + 2 / (1 + np.exp(-dMatrix_value)))
+        vA_parameters[vOff_diag_mask] = 1/3 * (-1 + 2 / (1 + np.exp(-vA_subparameters[vOff_diag_mask])))
+
+
+        # #Loop through flattened matrix to parametrize values.
+        # for iCount, dMatrix_value in enumerate(vA_parametrized):
+        #     #For diagonal elements.
+        #     if (iCount == 0 or iCount == 4 or iCount == 8):
+        #         vA_parametrized[iCount] = (1 + np.exp(-dMatrix_value))**-1
+
+        #     #For off-diagonal elements.
+        #     else:
+        #         vA_parametrized[iCount] = 1/3 * (-1 + 2 / (1 + np.exp(-dMatrix_value)))
     
     # #Put everything back together in the same format it was input.
     # vTrue_parameters = np.concatenate(([dBeta], [dLambda], vA_parametrized))
 
-    vParams_parametrized = np.insert(vA_parametrized, 0, [dBeta, dLambda])#.reshape(iRows, 1)
+    vParams_parametrized = np.insert(vA_parameters, 0, [dBeta, dLambda])#.reshape(iRows, 1)
     
     return vParams_parametrized
 
@@ -160,6 +161,11 @@ def Log_likelihood_function(vTheta, mXtilde, iK, iN, mOmega, mSigma_starting):
         vTheta_new = Parametrize(vTheta)
         dBeta = vTheta_new[0]
         dLambda = vTheta_new[1]
+
+        vA_flat = np.full(9, fill_value = np.inf)
+
+        vIndex_insert_before = [0, 4, 6, 9, 11, 13]
+
         vA_flat = vTheta_new[2:]
 
         #Pre-specified lower-trinagular A-matrix.
