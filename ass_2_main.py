@@ -130,7 +130,14 @@ def output_Q2():
             self.dLambda = dLambda
             self.dDelta = dDelta
             self.vX = np.linspace(start=-6, stop= 6, num=12000)
-            self.vSig2tPlus1 = [Sig2Hat(self.dOmega, self.dBeta, self.dAlpha, x, self.dMu, self.dDelta, self.dSig2Initial, self.dLambda) for x in self.vX]
+            self.vSig2tPlus1 = [Sig2Hat(self.dOmega,
+            self.dBeta,
+            self.dAlpha,
+            x,
+            self.dMu,
+            self.dDelta,
+            self.dSig2Initial,
+            self.dLambda) for x in self.vX]
 
     #Pre-determined lambda and delta values.
     vLambda = np.array([2, 5, 10, 50])
