@@ -68,6 +68,7 @@ def output_Q1(df):
     print('Question 1: ')
     print('')
 
+    df = df*100
     series = df.columns
     index = df.index
     
@@ -737,6 +738,7 @@ def output_Q5(df, estimates):
         sigmat_init_lev = volas_lev[index, i]
         sigmat_init_nolev = volas_nolev[index, i]
         xt_init = df.iloc[index, i]
+        print(xt_init)
             
         sims_sigma_lev = np.full((simsize, 21), sigmat_init_lev)
         sims_sigma_nolev = np.full((simsize, 21), sigmat_init_nolev)
@@ -762,14 +764,14 @@ def output_Q5(df, estimates):
         xt_h5_nolev = (np.apply_along_axis(np.product, 1, (sims_xt_nolev[:,1:6]+1))) -1
         xt_h20_nolev = (np.apply_along_axis(np.product, 1, (sims_xt_nolev[:,1:21]+1))) -1
         
-        print('for series', df.columns[i].replace('_ret','')) # this statement and loop print output for Q5
-        for q in [1,5,10]:
-            print('leveraged GARCH model: ')
-            print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_lev, q/100), np.quantile(xt_h5_lev, q/100), np.quantile(xt_h20_lev, q/100))
-            print('')
-            print('unleveraged GARCH model: ')
-            print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_nolev, q/100), np.quantile(xt_h5_nolev, q/100), np.quantile(xt_h20_nolev, q/100))
-            print('')
+        # print('for series', df.columns[i].replace('_ret','')) # this statement and loop print output for Q5
+        # for q in [1,5,10]:
+        #     print('leveraged GARCH model: ')
+        #     print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_lev, q/100), np.quantile(xt_h5_lev, q/100), np.quantile(xt_h20_lev, q/100))
+        #     print('')
+        #     print('unleveraged GARCH model: ')
+        #     print('for', q, '%, VaR for h = 1, 5, 20:', np.quantile(xt_h1_nolev, q/100), np.quantile(xt_h5_nolev, q/100), np.quantile(xt_h20_nolev, q/100))
+        #     print('')
             
         # store numbers into big object, then print as table...
         numb = i*2
@@ -779,22 +781,24 @@ def output_Q5(df, estimates):
         numbers[numb+1,:] = np.array([np.quantile(xt_h1_nolev, 0.01), np.quantile(xt_h1_nolev, 0.05), np.quantile(xt_h1_nolev, 0.1),
                                  np.quantile(xt_h5_nolev, 0.01), np.quantile(xt_h5_nolev, 0.05), np.quantile(xt_h5_nolev, 0.1),
                                  np.quantile(xt_h20_nolev, 0.01), np.quantile(xt_h20_nolev, 0.05), np.quantile(xt_h20_nolev, 0.1)])
-        
+    
+    numbers = numbers*100
     # this block of code prints a latex table for Q5
-    # print(' & & h=1 & & & h=5 & & & h=20 & & \\\ ')
-    # print(' & & q=0.01 & q=0.05 & q=0.10 & q=0.01 & q=0.05 & q=0.10 & q=0.01 & q=0.05 & q=0.10 \\Bstrut \\\ ')
-    # print(' \\midrule ')
-    # print(df.columns[0].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[0,:].round(decimals=4)]), '\\Tstrut \\\ ')
-    # print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[1,:].round(decimals=4)]), '\\\ ')
-    # print('&&&&&&&&&& \\\ ')
-    # print(df.columns[1].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[2,:].round(decimals=4)]), '\\\ ')
-    # print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[3,:].round(decimals=4)]), '\\\ ')
-    # print('&&&&&&&&&& \\\ ')
-    # print(df.columns[2].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[4,:].round(decimals=4)]), '\\\ ')
-    # print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[5,:].round(decimals=4)]), '\\\ ')
+    print(' & & h=1 & & & h=5 & & & h=20 & & \\\ ')
+    print('q =  & & 0.01 & 0.05 & 0.10 & 0.01 & 0.05 & 0.10 & 0.01 & 0.05 & 0.10 \\\ ')
+    print(' \\midrule ')
+    print(df.columns[0].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[0,:].round(decimals=4)]), ' \\\ ')
+    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[1,:].round(decimals=4)]), '\\\ ')
+    print('&&&&&&&&&& \\\ ')
+    print(df.columns[1].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[2,:].round(decimals=4)]), '\\\ ')
+    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[3,:].round(decimals=4)]), '\\\ ')
+    print('&&&&&&&&&& \\\ ')
+    print(df.columns[2].replace('_ret',''), ' & $\\delta \\neq 0 $ &',  '&'.join([str(entry) for entry in numbers[4,:].round(decimals=4)]), '\\\ ')
+    print(' & $ \\delta = 0 $ &', '&'.join([str(entry) for entry in numbers[5,:].round(decimals=4)]), '\\\ ')
 
     return
 
+#%%
 ###########################################################
 ### main
 def main():
@@ -803,11 +807,11 @@ def main():
     _, df_real = loadin_data(path)
 
     # now call the functions that print all of the output for all questions
-    output_Q1(df_real)
-    output_Q2()
+    #output_Q1(df_real)
+    #output_Q2()
     
     estimates = output_Q3(df_real)
-    output_Q4(df_real, estimates)
+    #output_Q4(df_real, estimates)
     output_Q5(df_real, estimates)
     
 ###########################################################
