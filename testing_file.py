@@ -1,5 +1,4 @@
 # import pachages
-import enum
 from numpy.ma.core import concatenate
 import pandas as pd
 import numpy as np
@@ -9,6 +8,7 @@ import datetime as dt
 from scipy.special import loggamma
 import scipy.optimize as opt
 import pandas as pd
+from scipy.stats import t
 pd.options.display.float_format = '{:.6f}'.format
 np.set_printoptions(suppress=True)
 #Change runtime warnings to errors to catch in debugging.
@@ -437,6 +437,8 @@ def Model1(dBeta_starting, dLambda_starting, dA_starting):
     dA11_result = (1 + np.exp(-res.x[2]))**-1
 
     print("\nLog-Likelihood: " + str(res.fun * 2500))
+    print("AIC: " + str(-2*(res.fun * 2500) + 2 * 3))
+    print("BIC: " + str(-2*(res.fun * 2500) + 2 * np.log(2500) * 3))
     print("\ndLambda: " + str(dLambda_result))
     print("\ndBeta: " + str(dBeta_result))
     print("\nmA: " + str(dA11_result))
@@ -446,9 +448,18 @@ def Model1(dBeta_starting, dLambda_starting, dA_starting):
     #Calculate covariance matrix and standard errors.
     vTrue_se = Standard_errors(vTheta_star)
 
-    #print("mCov: \n" + str(mCov) + "\n")
+    vT_stat = []
+    for iCount in range(0, len(vTrue_se)):
+        vT_stat.append(vTheta_star[iCount]/vTrue_se[iCount])
+    
+    vP_value = []
+    # p-value for 2-sided test
+    for iCount in range(0, len(vT_stat)):
+        vP_value.append(2*(1 - t.cdf(abs(vT_stat[iCount]), dLambda_result)))
 
-    print("\nStandar errors: \n" + str(vTrue_se))
+    print("\nStandard errors: \n" + str(vTrue_se))
+
+    print("\nP-values: \n" + str(vP_value))
 
     print("\nEnd of model specification 1.")
 
@@ -487,6 +498,8 @@ def Model2(dBeta_starting, dLambda_starting, vA_starting):
     mA_result = np.diag((1 + np.exp(-res.x[2:]))**-1)
 
     print("\nLog-Likelihood: " + str(res.fun * 2500))
+    print("AIC: " + str(-2*(res.fun * 2500) + 2 * 5))
+    print("BIC: " + str(-2*(res.fun * 2500) + 2 * np.log(2500) * 5))
     print("\ndLambda: " + str(dLambda_result))
     print("\ndBeta: " + str(dBeta_result))
     print("\nmA: \n" + str(mA_result))
@@ -497,7 +510,18 @@ def Model2(dBeta_starting, dLambda_starting, vA_starting):
     #Calculate covariance matrix and standard errors.
     vTrue_se = Standard_errors(vTheta_star)
 
-    print("\nStandar errors: \n" + str(vTrue_se))
+    vT_stat = []
+    for iCount in range(0, len(vTrue_se)):
+        vT_stat.append(vTheta_star[iCount]/vTrue_se[iCount])
+    
+    vP_value = []
+    # p-value for 2-sided test
+    for iCount in range(0, len(vT_stat)):
+        vP_value.append(2*(1 - t.cdf(abs(vT_stat[iCount]), dLambda_result)))
+
+    print("\nStandard errors: \n" + str(vTrue_se))
+
+    print("\nP-values: \n" + str(vP_value))
 
     print("\nEnd of model specification 2.")
 
@@ -550,6 +574,8 @@ def Model3(dBeta_starting, dLambda_starting, vA_starting):
     mA = vA_flat.reshape(3,3)
 
     print("\nLog-Likelihood: " + str(res.fun * 2500))
+    print("AIC: " + str(-2*(res.fun * 2500) + 2 * 8))
+    print("BIC: " + str(-2*(res.fun * 2500) + 2 * np.log(2500) * 8))
     print("\ndLambda: " + str(dLambda_result))
     print("\ndBeta: " + str(dBeta_result))
     print("\nmA: \n" + str(vA_lower_triangular))
@@ -560,8 +586,18 @@ def Model3(dBeta_starting, dLambda_starting, vA_starting):
     #Calculate covariance matrix and standard errors.
     vTrue_se = Standard_errors(vTheta_star)
 
-    #print("mCov: \n" + str(mCov) + "\n")
-    print("\nStandar errors: \n" + str(vTrue_se))
+    vT_stat = []
+    for iCount in range(0, len(vTrue_se)):
+        vT_stat.append(vTheta_star[iCount]/vTrue_se[iCount])
+    
+    vP_value = []
+    # p-value for 2-sided test
+    for iCount in range(0, len(vT_stat)):
+        vP_value.append(2*(1 - t.cdf(abs(vT_stat[iCount]), dLambda_result)))
+
+    print("\nStandard errors: \n" + str(vTrue_se))
+
+    print("\nP-values: \n" + str(vP_value))
 
     print("\nEnd of model specification 3.")
 
@@ -601,12 +637,12 @@ mSigma_starting = (((mXtilde[0:50, :].T@ mXtilde[0:50, :])
 ##First model specification.
 dA_starting = np.sqrt(0.02)
 
-#Model1(dBeta_starting, dLambda_starting, dA_starting)
+Model1(dBeta_starting, dLambda_starting, dA_starting)
 
 ##Second model specification.
 vA_starting = np.sqrt(np.array([0.02, 0.02, 0.02]))
 
-#Model2(dBeta_starting, dLambda_starting, vA_starting)
+Model2(dBeta_starting, dLambda_starting, vA_starting)
 
 ##Third model specification.
 vA_starting = np.sqrt(np.array([0.02, 0, 0.02, 0, 0, 0.02]))
