@@ -141,7 +141,7 @@ def output_Q2():
 
     #Pre-determined lambda and delta values.
     vLambda = np.array([2, 5, 10, 50])
-    vDelta = np.array([0, 1, 0.2, 0.4])
+    vDelta = np.array([0, 0.1, 0.2, 0.4])
     vXaxis = np.linspace(start=-6, stop= 6, num=12000)
     lNewsImpactCurves = []
 
@@ -1047,8 +1047,8 @@ def main():
     df_test, df_real = loadin_data(path)
 
     # now call the functions that print all of the output for all questions
-    #output_Q1(df_real)
-    #output_Q2()
+    output_Q1(df_real)
+    output_Q2()
     
     #estimates = output_Q3(df)
     #output_Q4(df_test, estimates)
