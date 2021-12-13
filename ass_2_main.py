@@ -215,6 +215,7 @@ def output_Q3(data):
     None.
 
     """
+    print("\nQuestion 3: \n")
     #### functions inside of functions ####
     def printMatrix(s):
         # Do heading
@@ -821,7 +822,7 @@ def output_Q7(df_real):
     Args:
         df (DataFrame): dataframe of returns
     """
-
+    print("\nQuestion 7: \n")
     ################################################################################
     ### Sigma_tplus1_calculation(vX_t, dBeta, mOmega, mA, dLambda, mSigma_t) = mSigma_tplus1
     def Sigma_tplus1_calculation(vX_t, dBeta, mOmega, mA, dLambda, mSigma_t):
@@ -1443,7 +1444,7 @@ def output_Q7(df_real):
 ### main
 def main():
     # magic numbers
-    path = r"C:\Users\gebruiker\Documents\GitHub\EQRM-II\data_ass_2.csv"
+    path = r"data_ass_2.csv"
     _, df_real = loadin_data(path)
 
     # now call the functions that print all of the output for all questions
